@@ -1,0 +1,84 @@
+<!--
+@licence
+    Copyright (c) 2016 Alan Chandler, all rights reserved
+
+    This file is part of akc-route.
+
+    akc-route is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    akc-route is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with akc-route.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`akc-route`
+A distributed router inspired by PolymerElements/app-route
+Unfortunately There are design decisions that I am finding means it makes it too complicated
+to use.  This is my attempt to provide equivalent functionality but in a slightly different way.
+
+@demo demo/index.html
+-->
+
+<script>
+  (function() {
+    'use strict';
+
+    Polymer({
+
+      is: 'akc-route',
+
+      properties: {
+       /*
+        * `inRoute` is a receiving route from either `akc-location` or the `outRoute` of another
+        * `akc-route` element. I contains all the data that is needed to be conveyed about the
+        *  route.  It has been chosen to be a single object because it can be assigned as a whole
+        */
+        inRoute: {
+          type: Object
+          notify:true
+        },
+       /*
+        * `matcher` is a pattern that is used as match against incoming route.  It will be only
+        * attempted if the incoming `irRoute` is active.
+        *
+        * It consists of a
+        * string which '/' separated segments which define how a portion of the url that has been
+        * passed down by the `irRoute` parameter may be matched.  The leading '/' is optional, a
+        * final '/' is significant in that it means this matcher only matches if the entire
+        * pattern consumes the remainder of the url
+        *
+        * Each segment consists of either a string to match directly, or a string starting with
+        * ':' (which means a named parameter - which then maps whatever the url segment at this
+        * point).
+        */
+        matcher: {
+          type: String,
+          value: ''
+        },
+       /*
+        * `outRoute` takes an `inRoute` ant attempts to apply the matcher.  If the matcher matches
+        * and any of the matcher segments are parameters, thes will be added to the outroute under
+        * the `params`.  Provided the `inRoute` has its `active flag set and regardless of if
+        * there are any parameters, if the matcher matched, out-route will have a boolean `active`
+        * flag set to true.
+        */
+        outRoute: {
+          type: Object,
+          value: function() {return {};},
+          notify: true
+        }
+      },
+
+    });
+  })();
+</script>
