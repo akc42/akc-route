@@ -22,7 +22,6 @@ The top of the routing chain is an element which is responsible for interacting 
 
 the route property contains the following fields.
 
-* `prefix` for `<akc-location>` this will always be the empty string, but further down the chain of `<akc-route>` elements it will show the amount of url consumed so far.
 * `path` shows the url path that has not yet been consumed
 * `active` a boolean that indicates whether the path so far has been matched. For `<akc-location>` this will be true
 * `params` further down the `<akc-route>` chain the `out-route.params`. property will contain an object of the matched parameters from the route. Fpr this element it will always contain the empty object (ie {});
@@ -30,7 +29,7 @@ the route property contains the following fields.
 
 Note - changes are atomic.  That is if the url changes, all of the above properties of the `route` object will set before any observer on the object or one of its properties sees a change.
 
-`<ack-location` will respond to an `akc-location` event and re-read the url
+`<akc-location>` will respond to an `akc-location` event and re-read the url. It will also fire this event just after it has updated `route` or the address bar
 
 Three input properties (ie they are not notified) can be given to `akc-location`.  These are:-
 * `useHashAsPath` if present this property signifies that `<akc-location` should only use hash paths part of the url
@@ -49,7 +48,7 @@ The `match` consumes part of the url based on the number of segments it has and 
 
 Each matched segment where the `match` property defines a parameter will be added to the `outRoute.params` object with the key defined by the `match` property name. If the matched portion of the url consists solely of the digits "0" to "9" (they will be in string form) the paramater will be converted to an integer before being placed in the `params` property. 
 
-As a route matches as described above the part of the url matched is passed from the `path` part of the url to the `prefix` part of the url in `outRoute`. The main point to be made is that the split is made **before** a slash. **If** the last match was the end of the url, **and** `inRoute.path` is not already just a '/' **and** the `match` property did not end in a traling slash (or was a single '/' all on its own) then the `outRoute.path` becomes a single '/'
+As a route matches as described above the part of the url matched is removed from the `path` part of the url in `outRoute`. The main point to be made is that the removed part is  **before** a slash. **If** the last match was the end of the url, **and** `inRoute.path` is not already just a '/' **and** the `match` property did not end in a traling slash (or was a single '/' all on its own) then the `outRoute.path` becomes a single '/'
 
 ## Rationale for this approach
 
@@ -75,9 +74,13 @@ and an application structure at the top level somthing like the following
   in-route="{{route}}"
   match="/:page"
   out-route="{{subRoute}}"></akc-route>
-<iron-pages>
-  <main-menu></main-menu>
-  <appointment-management route="{{subRoute}}"></appointment-management>
-  <reports route="{{subRoute}}"></reports>
+<iron-pages selected="[[page]]" attr-for-selected="name">
+  <main-menu name="menu"></main-menu>
+  <appointment-management name="appointments" route="{{subRoute}}"></appointment-management>
+  <my-reports name="reports" route="{{subRoute}}"></my-reports>
 </iron-pages>
 ```
+
+The first objective is to use different url's to switch pages. In the above scenario we need an observer on the combination of `subRoute.active` and `subRoute.params.page`. we can check for `subRoute.active` being `true` and  `subRoute.params.page` being `''` in order to set `page` to `'menu'`. At the top level this structure is fine, but at levels down (for instance in the `<my-reports>` element the exact same structure will be needed to match a menu at url /reports and a date reporting element at /reports/bydate ).  This is the reason for propagating one time a trailing '/').
+
+The reason for `ifMatched` is to provide support for the case where an `<akc-route>` element inside one of the two elements above (`appointment-management` and `my-reports`) can differenciate between a change meant for them or a change meant for the other url.  For instance the change from 0 to -1 in the third segment of the url could be related to change related to reports or a change related to appointments.  By using `ifMached` on the `<akc-route>` element inside either `<appointment-management>` or inside `<my-reports>`  It can be sure its meant from them.

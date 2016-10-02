@@ -1,22 +1,27 @@
 <!--
-@licence
+@license
     Copyright (c) 2016 Alan Chandler, all rights reserved
 
-    This file is part of akc-route.
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
 
-    akc-route is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-    akc-route is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with akc-route.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+    LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -->
+
 
 <link rel="import" href="../polymer/polymer.html">
 
@@ -44,11 +49,24 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         *  route.  It has been chosen to be a single object because it can be assigned as a whole
         */
         inRoute: {
-          type: Object
+          type: Object,
+          value: function() {return {};},
           notify:true
         },
+       /**
+        * `ifMatched` is a string which should be composed of two parts separated by a ':'
+        *  The first part is the name of a property in `inRoute.params` which should be checked
+        *  and the second part is a string it should be matched against (note a string which is
+        *  all digits will be considered numeric).  Unless the string marches this route will not
+        *  match.  If this `ifMatched` string is of zero length then it acts as though it had
+        *  matched a parameter
+        */
+        ifMatched: {
+          type: String,
+          value: ''
+        },
        /*
-        * `matcher` is a pattern that is used as match against incoming route.  It will be only
+        * `match` is a pattern that is used as match against incoming route.  It will be only
         * attempted if the incoming `irRoute` is active.
         *
         * It consists of a
@@ -61,7 +79,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         * ':' (which means a named parameter - which then maps whatever the url segment at this
         * point).
         */
-        matcher: {
+        match: {
           type: String,
           value: ''
         },
@@ -78,6 +96,161 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
           notify: true
         }
       },
+      attached: function() {
+        this.outRouteUpdateInProgress = false;
+      },
+      observers: [
+        '_inRouteChanged(ifMatched, match, inRoute)',
+        '_pathChanged(outRoute.active,outRoute.path)',
+        '_paramsChanged(outRoute.params)',
+        '_inRouteQueryChanged(inRoute.query)',
+        '_outRouteQueryChanged(outRoute.query)'
+      ],
+      _inRouteChanged: function(ifMatched, match, route) {
+        var completed = false;
+        if (route.active && this._ifMatches(ifMatched) && route.path.length > 0) {
+          if (match.slice(-1)  === '/') {
+            completed = true;  //Special meaning
+            if (match.length > 1) {
+              match = match.slice(0,-1);
+            }
+          }
+          var matchedPieces = match.split('/');
+          if (matchedPieces[0] === '') {
+            matchedPieces.shift();  //not interested in blank front
+          }
+          var urlPieces = route.path.split('/');
+          if (urlPieces.length < 2 || urlPieces[0] !== '') {
+            //something is wrong with path as it should have started with a '/'
+            console.warn('akc-route invalid path in inRoute');
+            this.set('inRoute.active', false); //make invalid
+            return;
+          }
+
+          urlPieces.shift();
+          var j = urlPieces.length
+          var newRoute = {
+            params: {},
+            active: true,
+            query: route.query
+          };
+          for(var i = 0; i < matchedPieces.length; i++) {
+            if (j <= 0)  {
+              this._clearOutActive();
+              return;
+            }
+            var segment = urlPieces.shift();
+            j--;
+            if (matchedPieces[i].length !== 0) {
+              if (matchedPieces[i].substring(0,1) === ':') {
+                var key = matchedPieces[i].substring(1);
+                if (key.length > 0) {
+                  if (/^\d+$/.test(segment)) {
+                    segment = parseInt(segment,10);
+                  }
+                  newRoute.params[key] = segment;
+                } else {
+                  console.warn('akc-route match pattern missing parameter name');
+                }
+              } else if (matchedPieces[i] !== segment) {
+                this._clearOutActive();
+                return;
+              }
+            } else if (segment.length > 0 ){
+              this._clearOutActive();
+              return
+            }
+          }
+          if (completed || route.path === '/' ) {
+            newRoute.path = ''
+          } else if (j == 0) {
+            newRoute.path = '/';
+          } else {
+            newRoute.path = '/' + urlPieces.join('/');
+          }
+          this.outRouteUpdateInProgress = true;
+          this.set('outRoute', newRoute);
+          this.outRouteUpdateInProgress = false;
+        } else {
+          this._clearOutActive();
+        }
+
+      },
+      _pathChanged: function(active,path) {
+        if (!this.outRouteUpdateInProgress && active) {
+          //Look at inRoute's path and work out how much will be coming off because of match
+          var matchedPieces = this.match.split('/');
+          var urlPieces = this.inRoute.path.split('/');
+          urlPieces = urlPieces.splice(0,matchedPieces.length);
+          var newPath = urlPieces.join('/');
+          if (path.length > 1 && path.substring(0,1) === '/') {
+            newPath += path;
+          }
+          this.set('inRoute.path', urlPieces.join('/') + path);
+        }
+      },
+      _paramsChanged: function(params) {
+        if (!this.outRouteUpdateInProgress &&
+          this.inRoute.active && this._ifMatches(this.ifMatched)) {
+          //only do anything if this route is active
+          var path = '' ;//calculate what path should be
+          var matchedPieces = this.match.split('/');
+          if (matchedPieces[0] === '') {
+            matchedPieces.shift();  //not interested in blank front
+          }
+          for(var i = 0; i < matchedPieces.length; i++) {
+            if (matchedPieces[i].length !== 0) {
+              if (matchedPieces[i].substring(0,1) === ':') {
+                var key = matchedPieces[i].substring(1);
+                if (params[key] === undefined) {
+                  console.warn('akc-route params change, invalid parameter');
+                  return;
+                }
+                path += '/' + params[key].toString();
+              } else {
+                path += '/' + matchePieces[i];
+              }
+            }
+          }
+          if (this.outRoute.path.length > 1 && this.outRoute.active) {
+            path += this.outRoute.path; //only do this if the outpath was really there
+          }
+          if (path !== this.inRoute.path) {
+            this.set('inRoute.path', path);
+          }
+        }
+      },
+      _ifMatches: function(ifString) {
+        if (ifString.length === 0) {
+          return true;  //Empty String always matches
+        }
+        var matcher = ifString.split(':');
+        if (matcher.length !== 2) {
+          console.warn('Invalid ifMatched String');
+          return true
+        } else {
+          if (this.inRoute.params[matcher[0]] !== undefined &&
+            this.inRoute.params[matcher[0]] === matcher[1]) {
+            return true;
+          }
+          return false;
+        }
+      },
+      _clearOutActive: function() {
+        this.outRouteUpdateInProgress = true;
+        this.set('outRoute.active', false);
+        this.outRouteUpdateInProgress = false;
+      },
+      _inRouteQueryChanged: function(query) {
+        this.outRouteUpdateInProgress = true;
+        this.set('outRoute.query', query);
+        this.outRouteUpdateInProgress = false;
+      },
+      _outRouteQueryChanged: function(query) {
+        if(!this.outRouteUpdateInProgress) {
+          this.set('inRoute.query', query);
+        }
+      }
 
     });
   })();

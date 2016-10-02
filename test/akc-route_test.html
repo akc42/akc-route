@@ -1,5 +1,27 @@
 <!doctype html>
+<!--
+@license
+    Copyright (c) 2016 Alan Chandler, all rights reserved
 
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+    LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
 <html>
   <head>
     <title>akc-route test</title>
@@ -9,21 +31,109 @@
     <script src="../../web-component-tester/browser.js"></script>
 
     <link rel="import" href="../akc-route.html">
+    <link rel="import" href="test-route-app.html">
   </head>
   <body>
 
     <test-fixture id="basic">
       <template>
-        <akc-route></akc-route>
+        <akc-route match="/:page"></akc-route>
+      </template>
+    </test-fixture>
+    <test-fixture id="chained">
+      <template>
+        <test-route-app></test-route-app>
       </template>
     </test-fixture>
 
     <script>
-      suite('akc-route', function() {
+      describe('akc-route', function() {
+        describe('basic functionality', function() {
+          var el
+          beforeEach(function() {
+            el = fixture('basic');
+            el.inRoute = {};
+          })
+          it('instantiates itself', function() {
+            expect(el.is).to.equal('akc-route');
+          });
+          it('match a simple route', function() {
+            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+            expect(el.outRoute).to.deep.equal(
+              {path: '/', active: true, params: {page: 'reports'}, query: {}});
+          });
+          it('match home route', function() {
+            el.inRoute = {path: '/', active: true, params: {}, query: {}};
+             expect(el.outRoute).to.deep.equal(
+              {path: '', active: true, params: {page: ''}, query: {}});
+          });
+          it('passes remainder of path after match to out-route', function() {
+            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+            expect(el.outRoute.path).to.equal('/bydate');
+          });
+          it('out route not active unless in-route active', function() {
+            el.inRoute = {path: '/reports', active: false, params: {}, query: {}};
+            expect(el.outRoute.active).to.be.false;
+          });
+          it('out route path has no "/" if match has trailing "/"', function() {
+            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+            el.match = '/:page/';
+            expect(el.outRoute.path).to.equal('');
+          });
+          it('in route with empty string for path will not match', function() {
+            el.inRoute = {path: '', active: true, params: {}, query: {}};
+            expect(el.outRoute.active).to.be.false;
+          });
+          it('if matched parameter is all digits, params provides a number', function() {
+            el.inRoute = {path: '/20160101/staff', active: true, params: {}, query: {}};
+            expect(el.outRoute.params.page).to.equal(20160101);
+            expect(el.outRoute.params.page).to.not.equal('20160101');
+            el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
+            expect(el.outRoute.params.page).to.equal('staff');
+          });
+          it('query parameters passed downwards', function() {
+            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+            el.set('inRoute.query', {date: '20160101'});
+            expect(el.outRoute.query).to.eql({date: '20160101'});
+          });
+          it('query parameters passed upwards', function() {
+            el.inRoute = {path: '', active: true, params: {}, query: {}};
+            el.set('outRoute.query', {date: '20161231'});
+            expect(el.inRoute.query).to.eql({date: '20161231'})
+          });
+          it('changes in parameters effect in-route path', function() {
+            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+            el.set('outRoute.params', {page: 'query'});
+            expect(el.inRoute.path).to.equal('/query/bydate');
+          });
+        });
+        describe('chaining functionality', function() {
+          var el;
+          beforeEach(function() {
+            el = fixture('chained');
+            el.ifMatch = '';
+            el.route = {};
+          });
+          it('not match if ifMatcher criteria not met', function() {
+            el.ifMatch = 'page:appointment'
+            el.match = '/:page'
+            el.route = {path: '/reports/bydate', active: true, params: {}, query: {}};
+            expect(el.subSubRoute.active).to.be.false;
+          });
+          it('changes to lower paths can propagate up provided lower is active', function() {
+            el.match = '/reports';
+            el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
+            el.set('subSubRoute.path', '/20161231');
+            expect(el.route.path).to.equal('/reports/bydate/20161231');
+          });
+          it('changes to lower paths don\'t propagate up if lower not active', function() {
+            el.match = '/reports';
+            el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
+            el.$.route2.match = '/query';
+            el.set('subSubRoute.path', '/20161231');
+            expect(el.route.path).to.equal('/reports/bydate/20160101');
+          });
 
-        test('instantiating the element works', function() {
-          var element = fixture('basic');
-          assert.equal(element.is, 'akc-route');
         });
 
       });

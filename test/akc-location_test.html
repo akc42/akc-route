@@ -1,0 +1,101 @@
+<!doctype html>
+<!--
+@license
+    Copyright (c) 2016 Alan Chandler, all rights reserved
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+    LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<html>
+  <head>
+    <title>akc-route test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../akc-location.html">
+
+  </head>
+  <body>
+
+    <test-fixture id="basic">
+      <template>
+        <akc-location></akc-location>
+      </template>
+    </test-fixture>
+    <test-fixture id="hash">
+      <template>
+        <akc-location use-hash-as-path></akc-location>
+      </template>
+    </test-fixture>
+
+
+    <script>
+    function setLocation(url) {
+      window.history.pushState({}, '', url);
+      window.dispatchEvent(new CustomEvent('location-changed'));
+    }
+
+    describe('<akc-location>', function() {
+      this.timeout(0); //TMP -----------------------------------------------------------------
+      var originalLocation;
+      beforeEach( function() {
+        originalLocation = window.location.href;
+      });
+      afterEach(function() {
+        window.history.replaceState({}, '', originalLocation);
+      });
+      it('instantiates itself', function() {
+        var el = fixture('basic');
+        expect(el.is).to.equal('akc-location');
+      });
+      describe('basic tests', function() {
+        var el;
+        beforeEach(function() {
+          el=fixture('basic');
+        });
+        it('expect route to be exposed', function() {
+          expect(el.route).to.be.ok;
+          expect(el.route.active).to.be.true;
+        });
+        it('expect route to path to reflect path', function() {
+          expect(el.route.path).to.equal(window.location.pathname);
+        });
+        it('expect search string changes to reflect in route', function() {
+console.log('just before setting query string to ?date=20160101&staff=2');
+          setLocation(window.location.pathname + '?date=20160101&staff=2');
+console.log('query string set in test');
+          expect(el.route.query).to.deep.equal({date: '20160101', staff: '2'});
+        });
+        it('reflect changes to route path to url', function() {
+          el.set('route.path', '/reports/bydate/20161231');
+          expect(window.location.pathname).to.equal('/reports/bydate/20161231');
+        });
+        it('reflect query string changes to route.query', function() {
+          el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
+          expect(window.location.search).to.equal('?firstname=Joe&lastname=Bloggs');
+        })
+
+      });
+    });
+
+    </script>
+  </body>
+</html>

@@ -1,9 +1,26 @@
 {
   "name": "akc-route",
+  "version": "0.0.1",
   "description": "A distributed router inspired by PolymerElements/app-route",
-  "main": "akc-route.html",
+  "authors": [
+    "Alan Chandler"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "routing"
+  ],
+  "main": [
+    "akc-route.html",
+    "akc-location.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/akc42/akc-route.git"
+  },
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0"
+    "iron-location": "PolymerElements/iron-location#^0.8.9"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",

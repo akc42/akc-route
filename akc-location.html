@@ -2,23 +2,29 @@
 @licence
     Copyright (c) 2016 Alan Chandler, all rights reserved
 
-    This file is part of akc-route.
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
 
-    akc-route is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-    akc-route is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with akc-route.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+    LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -->
 
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-location/iron-location.html">
+<link rel="import" href="../iron-location/iron-query-params.html">
 
 <!--
 `akc-location`
@@ -32,3 +38,175 @@ this to and from a `route` object that can be passed fown a chain of such object
 
 @demo demo/index.html
 -->
+<dom-module id="akc-location">
+<template>
+<!-- we use iron location to manage only the urlSpaceRegex part of things, not path, hash etc -->
+  <iron-location  url-space-regex="{{urlSpaceRegex}}"></iron-location>
+<!-- this already converts between query string and query object, so no need to implement anything
+  Just reuse this -->
+  <iron-query-params
+      params-string="{{__queryString}}"
+      params-object="{{__query}}"></iron-query-params>
+</template>
+  <script>
+    'use strict';
+
+    Polymer({
+      is: 'akc-location',
+      properties: {
+        /**
+         * the route property contains the following fields.
+         *
+         *  * `prefix` for `<akc-location>` this will always be the empty string, but further down
+         *     the chain of `<akc-route>` elements it will show the amount of url consumed so far.
+         *  * `path` shows the url path that has not yet been consumed
+         *  * `active` a boolean that indicates whether the path so far has been matched. For
+         *     `<akc-location>` this will be true once the first route has initialised
+         *  * `params` further down the `<akc-route>` chain the `out-route.params`. property will
+         *     contain an object of the matched parameters from the route. Fpr this element it
+         *     will always contain the empty object (ie {});
+         *  * `query` will contain an object representation of the search parameters from the url.
+         *
+         *  Note - changes are atomic.  That is if the url changes, all of the above properties of
+         *  the `route` object will set before any observer on the object or one of its properties
+         *  sees a change.
+         * @type(object)
+         */
+        route: {
+          type: Object,
+          value: function() {return { path: '', active: false, params: {}, query: {}};},
+          notify: true
+        },
+        /**
+         * In many scenarios, it is convenient to treat the `hash` as a stand-in
+         * alternative to the `path`. For example, if deploying an app to a static
+         * web server (e.g., Github Pages) - where one does not have control over
+         * server-side routing - it is usually a better experience to use the hash
+         * to represent paths through one's app.
+         *
+         * When this property is set to true, the `hash` will be used in place of
+
+         * the `path` for generating a `route`.
+         * @type(boolean)
+         */
+        useHashAsPath: {
+          type: Boolean,
+          value: false
+        },
+        /**
+         * If the user was on a URL for less than `dwellTime` milliseconds, it
+         * won't be added to the browser's history, but instead will be replaced
+         * by the next entry.
+         *
+         * This is to prevent large numbers of entries from clogging up the user's
+         * browser history. Disable by setting to a negative number.
+         * @type(number)
+         */
+        dwellTime: {
+          type: Number,
+          value: 2000
+        },
+        /**
+         * A regexp that defines the set of URLs that should be considered part
+         * of this web app.
+         *
+         * Clicking on a link that matches this regex won't result in a full page
+         * navigation, but will instead just update the URL state in place.
+         *
+         * This regexp is given everything after the origin in an absolute
+         * URL. So to match just URLs that start with /search/ do:
+         *     url-space-regex="^/search/"
+         *
+         * @type {string|RegExp}
+         */
+        urlSpaceRegex: {
+          type: String,
+          value: ''
+        },
+        __query: {
+          type: Object
+        },
+        __queryString: {
+          type: String
+        }
+
+      },
+      hostAttributes: {
+        hidden: true
+      },
+      attached: function() {
+        this.routeUpdateInProgress = false;
+        this.urlUpdateInProgress = false;
+        this.listen(window, 'hashchange', '_urlChanged');
+        this.listen(window, 'popstate', '_urlChanged');
+        this.listen(window, 'location-changed','_urlChanged' );
+        this._urlChanged(); //set initial conditions.
+        this._lastChangedAt = window.performance.now() - (this.dwellTime - 200);
+      },
+      detached: function() {
+        this.unlisten(window, 'location-changed','_urlChanged');
+        this.unlisten(window, 'popstate', '_urlChanged');
+        this.unlisten(window, 'hashchange', '_urlChanged');
+      },
+      observers: [
+        '_routeChanged(route.path,route.query)'
+      ],
+      _urlChanged: function() {
+        if (!this.urlUpdateInProgress) {
+          var hash = window.decodeURIComponent(window.location.hash.substring(1));
+          var path = window.decodeURIComponent(window.location.pathname);
+          this.__queryString = window.location.search.substring(1);
+          if (this.route &&
+            this.route.path === (this.useHashAsPath ? hash : path) &&
+            this.route.query === this.__query) {
+            return;
+          }
+          this._lastChangeAt = window.performance.now()
+          this.routeUpdateInProgress = true
+          this.route = {
+            path: (this.useHashAsPath ? hash : path),
+            params: {},
+            query: this.__query,
+            active: true
+          };
+          this.routeUpdateInProgress = false;
+        }
+      },
+      _routeChanged: function(path, query) {
+        if (this.routeUpdateInProgress === undefined) {
+          return; //don't want to do anything until we are established
+        }
+        if (!this.routeUpdateInProgress) {
+          this.urlUpdateInProgress = true;
+          var newUrl;
+          if (this.useHashAsPath) {
+            newUrl = window.location.pathname
+          } else {
+            newUrl = window.encodeURI(path).replace(/\#/g, '%23').replace(/\?/g, '%3F');
+          }
+          if (query) {
+            this.__query = query;
+            newUrl += '?' + this.__queryString.replace(/\#/g, '%23');
+
+          }
+          if (this.useHashAsPath) {
+            newUrl += '#' + window.encodeURI(path);
+          } else {
+            newUrl += window.location.hash
+          }
+          // Tidy up if base tag in header
+          newUrl = new URL(newUrl, window.location.protocol + '//' + window.location.host).href
+          var now = window.performance.now();
+          if (this._lastChangedAt + this.dwellTime > now) {
+            window.history.replaceState({}, '', newUrl);
+          } else {
+            window.history.pushState({}, '', newUrl);
+          }
+          this._lastChangedAt = now;
+          this.urlUpdateInProgress = false;
+        }
+      }
+    });
+
+  </script>
+</dom-module>
