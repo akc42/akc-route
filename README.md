@@ -7,9 +7,9 @@ A distributed router inspired by PolymerElements/app-route
 I am partway through a large project using Polymer to redevelop a Microsoft Access application to run as a Single Page web application.  I want to expose
 URLs to the user, so that they can represent points in the application which can be handed to other users.  This requires a client side router.
 
-I had several attempts at this, starting with twp centralised solutions.  But eventually I started to use the Polymer teams `<app-route>` element (coupled with `<app-location>`) to provide routing.  The distributed nature of this was absolutely the right approach, and I continued to work with it.
+I had several attempts at this, starting with two centralised solutions.  But eventually I started to use the Polymer teams `<app-route>` element (coupled with `<app-location>`) to provide routing.  The distributed nature of this was absolutely the right approach, and I continued to work with it.
 
-However, the more I have worked with it in detail it has exposed what I have initially regarded as bugs. In particular, relying on a transition of a variable to cause an action after a url change is essential - but when it happens and some of the related variables in the application have not yet changed this sophisticated routing starts to break. I have been working through each of these cases and supplying a fix back to the `<app-route>` team.
+However, the more I have worked with it in detail the more it has exposed what I initially regarded as bugs. In particular, relying on a transition of a variable to cause an action after a url change is essential - but when it happens and some of the related variables in the application have not yet changed this sophisticated routing starts to break down. I have been working through each of these cases and supplying a fix back to the `<app-route>` team.
 
 However the last of these made me question the fundementals of how 
 `<app-route>` works.  What is really needed is that all changes to routing take place as one atomic action.  By separately exposing properties `route`, `data`, `active` and `query-params`  this is impossible.
@@ -23,8 +23,8 @@ The top of the routing chain is an element which is responsible for interacting 
 the route property contains the following fields.
 
 * `path` shows the url path that has not yet been consumed
-* `active` a boolean that indicates whether the path so far has been matched. For `<akc-location>` this will be true
-* `params` further down the `<akc-route>` chain the `out-route.params`. property will contain an object of the matched parameters from the route. Fpr this element it will always contain the empty object (ie {});
+* `active` a boolean that indicates whether the path so far has been matched. For `<akc-location>` this always will be true after the app has fully initialised.
+* `params` further down the `<akc-route>` chain the `out-route.params`. property will contain an object of the matched parameters from the route. For this element it will always contain the empty object (ie {});
 * `query` will contain an object representation of the search parameters from the url.
 
 Note - changes are atomic.  That is if the url changes, all of the above properties of the `route` object will set before any observer on the object or one of its properties sees a change.
@@ -33,14 +33,14 @@ Note - changes are atomic.  That is if the url changes, all of the above propert
 
 Three input properties (ie they are not notified) can be given to `akc-location`.  These are:-
 * `useHashAsPath` if present this property signifies that `<akc-location` should only use hash paths part of the url
-* `urlSpaceTegex` can be used to tell the router to capture clicks for urls that match the regex and apply routing for them.
-* `dwellTime` a timer which if the url changes within that time from the previous change this changes is replaced on the history stack rather than pushing a new entry. 
+* `urlSpaceRegex` can be used to tell the router to capture clicks for urls that match the regex and apply routing for them. Note, this is just a pass through to `<iron-location>`
+* `dwellTime` a timer which if the url changes within that time from the previous change this change is replaced on the history stack rather than pushing a new entry. 
 
 ## `<akc-route>` element
 
 This element provides a matcher to segments of a url.  It is designed to exist in a chain with other `<akc-route>` elements, each one taking in a `route` object on its `inRoute` property consuming part of the url and exposing a different `route` object on an `outRoute` property. Two other properties define how this transformation is to take place:-
-* `ifMatched` is a optional preview switch which is a string consisting of a pair of strings seperated by a ':'.  If `ifMatched` is present then the string to the left of the colon represents a parameter name and the string to the right a value.  If that parameter is present in incoming route **and** has the value given, that matching con proceed (see next property).  If it doesn't matched then no matching will take place and the `outRoute.active` value will be set to `false`. If `ifMatched` is not present or an empty string, then this element will act as though `ifMatched` matched.
-* `match` is a string property which consists of a '/' seperated list of `segments` matching eqivalent '/' seperated segments of a url.  The initial '/' is manditory and will cause a warning to be given if not present since an initial '/' in the path that this `<akc-route>` is trying to match will nearly always be present (**even** if the previous `<akc-route>` in the chain consumed the remainder of the url and only **unless** the previous `<akc-route>`'s' `match` parameter contains a trailing '/').  A trailing '/' in the `match` property means **only** match if the entire url is consumed by this element. If the property is missing all together then it is assumed to contain a single '/'.  See below for how that is interpreted
+* `ifMatched` is a optional preview switch which is a string consisting of a pair of strings seperated by a `':'`.  If `ifMatched` is present then the string to the left of the colon represents a parameter name and the string to the right a value.  If that parameter is present in incoming route **and** has the value given, that matching con proceed (see next property).  If it doesn't match then no matching will take place and the `outRoute.active` value will be set to `false`. If `ifMatched` is not present or an empty string, then this element will act as though `ifMatched` matched.
+* `match` is a string property which consists of a `'/'` seperated list of `segments` matching eqivalent `'/'` seperated segments of a url.  The initial `'/'` is manditory and will cause a warning to be given if not present since an initial `'/'` in the path that this `<akc-route>` is trying to match will nearly always be present (**even** if the previous `<akc-route>` in the chain consumed the remainder of the url and only **unless** the previous `<akc-route>`'s' `match` parameter contains a trailing `'/'`).  A trailing `'/'` in the `match` property means **only** match if the entire url is consumed by this element. If the property is missing all together then it is assumed to contain a single '/'.  See below for how that is interpreted
 
 When `inRoute` changes an `<akc-route>` element processes the changes by looking at the `path` portion of the route and seeing if it can match it with the `match` property. Subject to `inRoute`'s `active` property being `true`  and subject to possible the pre-check defined by a `ifMatched` property, if this match succeeds the `outRoute` property which contain an adjusted copy of `inRoute`. The **only** change to `outRoute` if the match doesn't succeed is its `active` property will be set `false` if it wasn't already set so.
 
@@ -52,7 +52,7 @@ As a route matches as described above the part of the url matched is removed fro
 
 ## Rationale for this approach
 
-As defined in the introduction this pair of elements was inspired by the work done by the Polymer team to produce the `<app-route>` and associated elements.  However, I felt that this approach was too locked in to the legacy interface to be able to deal with the issues as I saw the in relation to haveing all the values of a `route` in place at the next state after a url change before any observers on that `route` can fire.  The remainder of the differences are related to lessons learned along the way.
+As defined in the introduction this pair of elements was inspired by the work done by the Polymer team to produce the `<app-route>` and associated elements.  However, I felt that this approach was too locked in to the legacy interface to be able to deal with the issues as I saw the in relation to having all the values of a `route` in place at the next state after a url change before any observers on that `route` can fire.  The remainder of the differences are related to lessons learned along the way.
 
 Consider the following set of urls
 
@@ -81,6 +81,6 @@ and an application structure at the top level somthing like the following
 </iron-pages>
 ```
 
-The first objective is to use different url's to switch pages. In the above scenario we need an observer on the combination of `subRoute.active` and `subRoute.params.page`. we can check for `subRoute.active` being `true` and  `subRoute.params.page` being `''` in order to set `page` to `'menu'`. At the top level this structure is fine, but at levels down (for instance in the `<my-reports>` element the exact same structure will be needed to match a menu at url /reports and a date reporting element at /reports/bydate ).  This is the reason for propagating one time a trailing '/').
+The first objective is to use different url's to switch pages. In the above scenario we need an observer on the combination of `subRoute.active` and `subRoute.params.page`. we can check for `subRoute.active` being `true` and  `subRoute.params.page` being `''` in order to set `page` to `'menu'`. At the top level this structure is fine, but at levels down (for instance in the `<my-reports>` element the exact same structure will be needed to match a menu at url /reports and a date reporting element at /reports/bydate ).  This is the reason for propagating one time a trailing `'/'`).
 
-The reason for `ifMatched` is to provide support for the case where an `<akc-route>` element inside one of the two elements above (`appointment-management` and `my-reports`) can differenciate between a change meant for them or a change meant for the other url.  For instance the change from 0 to -1 in the third segment of the url could be related to change related to reports or a change related to appointments.  By using `ifMached` on the `<akc-route>` element inside either `<appointment-management>` or inside `<my-reports>`  It can be sure its meant from them.
+The reason for `ifMatched` is to provide support for the case where an `<akc-route>` element inside one of the two elements above (`appointment-management` and `my-reports`) can differenciate between a change meant for them or a change meant for the other url.  For instance the change from 0 to -1 in the third segment of the url could be related to change related to reports or a change related to appointments.  By using `ifMached` on the `<akc-route>` element inside either `<appointment-management>` or inside `<my-reports>`  It can be sure its meant for them.
