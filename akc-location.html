@@ -196,13 +196,15 @@ this to and from a `route` object that can be passed fown a chain of such object
           }
           // Tidy up if base tag in header
           newUrl = new URL(newUrl, window.location.protocol + '//' + window.location.host).href
-          var now = window.performance.now();
-          if (this._lastChangedAt + this.dwellTime > now) {
-            window.history.replaceState({}, '', newUrl);
-          } else {
-            window.history.pushState({}, '', newUrl);
+          if (newUrl !== window.location.href) { //has it changed?
+            var now = window.performance.now();
+            if (this._lastChangedAt + this.dwellTime > now) {
+              window.history.replaceState({}, '', newUrl);
+            } else {
+              window.history.pushState({}, '', newUrl);
+            }
+            this._lastChangedAt = now;
           }
-          this._lastChangedAt = now;
           this.urlUpdateInProgress = false;
         }
       }
