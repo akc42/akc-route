@@ -144,6 +144,13 @@
             el.set('subRoute.params', {page: ''});
             expect(el.route.path).to.equal('/');
           });
+          it('reflect parameter changes that active out-route', function() {
+            el.match = '/:userid/:classid'
+            el.route = {path: '/4', active: true, params: {}, query: {}};
+            expect(el.subSubRoute.active).to.be.false;
+            el.set('subRoute.params', {userid: 4, classid: 5});
+            expect(el.subSubRoute.active).to.be.true;
+          });
 
         });
 

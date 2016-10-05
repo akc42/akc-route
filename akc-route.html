@@ -100,15 +100,15 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         this.outRouteUpdateInProgress = false;
       },
       observers: [
-        '_inRouteChanged(ifMatched, match, inRoute)',
+        '_inRouteChanged(ifMatched, match, inRoute.*)',
         '_pathChanged(outRoute.active,outRoute.path)',
         '_paramsChanged(outRoute.params.*)',
         '_inRouteQueryChanged(inRoute.query)',
         '_outRouteQueryChanged(outRoute.query)'
       ],
-      _inRouteChanged: function(ifMatched, match, route) {
+      _inRouteChanged: function(ifMatched, match, changes) {
         var completed = false;
-        if (route.active && this._ifMatches(ifMatched) && route.path.length > 0) {
+        if (changes.base.active && this._ifMatches(ifMatched) && changes.base.path.length > 0) {
           if (match.slice(-1)  === '/') {
             completed = true;  //Special meaning
             if (match.length > 1) {
@@ -119,7 +119,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
           if (matchedPieces[0] === '') {
             matchedPieces.shift();  //not interested in blank front
           }
-          var urlPieces = route.path.split('/');
+          var urlPieces = changes.base.path.split('/');
           if (urlPieces.length < 2 || urlPieces[0] !== '') {
             //something is wrong with path as it should have started with a '/'
             console.warn('akc-route invalid path in inRoute');
@@ -132,7 +132,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
           var newRoute = {
             params: {},
             active: true,
-            query: route.query
+            query: changes.base.query
           };
           for(var i = 0; i < matchedPieces.length; i++) {
             if (j <= 0)  {
@@ -161,7 +161,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
               return
             }
           }
-          if (completed || route.path === '/' ) {
+          if (completed || changes.base.path === '/' ) {
             newRoute.path = ''
           } else if (j == 0) {
             newRoute.path = '/';
@@ -203,10 +203,14 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
               if (matchedPieces[i].substring(0,1) === ':') {
                 var key = matchedPieces[i].substring(1);
                 if (changes.base[key] === undefined) {
-                  console.warn('akc-route params change, invalid parameter');
-                  return;
+                  if (changes.path.substring(15) !== key ) {
+                    console.warn('akc-route params change, missing parameter');
+                    return;
+                  }
+                  path += '/' + changes.value.toString();
+                } else {
+                  path += '/' + changes.base[key].toString();
                 }
-                path += '/' + changes.base[key].toString();
               } else {
                 path += '/' + matchedPieces[i];
               }
