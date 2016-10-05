@@ -79,9 +79,7 @@
           expect(el.route.path).to.equal(window.location.pathname);
         });
         it('expect search string changes to reflect in route', function() {
-console.log('just before setting query string to ?date=20160101&staff=2');
           setLocation(window.location.pathname + '?date=20160101&staff=2');
-console.log('query string set in test');
           expect(el.route.query).to.deep.equal({date: '20160101', staff: '2'});
         });
         it('reflect changes to route path to url', function() {
@@ -91,7 +89,12 @@ console.log('query string set in test');
         it('reflect query string changes to route.query', function() {
           el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
           expect(window.location.search).to.equal('?firstname=Joe&lastname=Bloggs');
-        })
+        });
+        it('seting query to null object in route should clear qhery string', function() {
+          el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
+          el.set('route.query', {});
+          expect(window.location.search).to.equal('');
+        });
 
       });
     });

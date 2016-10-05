@@ -133,6 +133,12 @@
             el.set('subSubRoute.path', '/20161231');
             expect(el.route.path).to.equal('/reports/bydate/20160101');
           });
+          it('zero length parameter change limits actuve', function() {
+            el.match = '/:page';
+            el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
+            el.set('subRoute.params', {page: ''});
+            expect(el.route.path).to.equal('/');
+          });
 
         });
 

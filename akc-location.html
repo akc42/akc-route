@@ -184,7 +184,7 @@ this to and from a `route` object that can be passed fown a chain of such object
           } else {
             newUrl = window.encodeURI(path).replace(/\#/g, '%23').replace(/\?/g, '%3F');
           }
-          if (query) {
+          if (query && Object.keys(query).length > 0) {
             this.__query = query;
             newUrl += '?' + this.__queryString.replace(/\#/g, '%23');
 

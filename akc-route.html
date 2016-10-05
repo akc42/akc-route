@@ -50,7 +50,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         */
         inRoute: {
           type: Object,
-          value: function() {return {};},
+          value: function() {return {path: '', active: false, params: {}, query: {}};},
           notify:true
         },
        /**
@@ -92,7 +92,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         */
         outRoute: {
           type: Object,
-          value: function() {return {};},
+          value: function() {return {path: '', active: false, params: {}, query: {}};},
           notify: true
         }
       },
@@ -208,11 +208,11 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
                 }
                 path += '/' + params[key].toString();
               } else {
-                path += '/' + matchePieces[i];
+                path += '/' + matchedPieces[i];
               }
             }
           }
-          if (this.outRoute.path.length > 1 && this.outRoute.active) {
+          if (path.length > 1 && this.outRoute.path.length > 1 && this.outRoute.active) {
             path += this.outRoute.path; //only do this if the outpath was really there
           }
           if (path !== this.inRoute.path) {
