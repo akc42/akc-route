@@ -102,7 +102,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
       observers: [
         '_inRouteChanged(ifMatched, match, inRoute)',
         '_pathChanged(outRoute.active,outRoute.path)',
-        '_paramsChanged(outRoute.params)',
+        '_paramsChanged(outRoute.params.*)',
         '_inRouteQueryChanged(inRoute.query)',
         '_outRouteQueryChanged(outRoute.query)'
       ],
@@ -189,7 +189,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
           this.set('inRoute.path', urlPieces.join('/') + path);
         }
       },
-      _paramsChanged: function(params) {
+      _paramsChanged: function(changes) {
         if (!this.outRouteUpdateInProgress &&
           this.inRoute.active && this._ifMatches(this.ifMatched)) {
           //only do anything if this route is active
@@ -202,11 +202,11 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
             if (matchedPieces[i].length !== 0) {
               if (matchedPieces[i].substring(0,1) === ':') {
                 var key = matchedPieces[i].substring(1);
-                if (params[key] === undefined) {
+                if (changes.base[key] === undefined) {
                   console.warn('akc-route params change, invalid parameter');
                   return;
                 }
-                path += '/' + params[key].toString();
+                path += '/' + changes.base[key].toString();
               } else {
                 path += '/' + matchedPieces[i];
               }
