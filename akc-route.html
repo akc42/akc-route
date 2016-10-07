@@ -202,14 +202,10 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
             if (matchedPieces[i].length !== 0) {
               if (matchedPieces[i].substring(0,1) === ':') {
                 var key = matchedPieces[i].substring(1);
-                if (changes.base[key] === undefined) {
-                  if (changes.path.substring(15) !== key ) {
-                    console.warn('akc-route params change, missing parameter');
-                    return;
-                  }
-                  path += '/' + changes.value.toString();
-                } else {
+                if (changes.base[key]) {
                   path += '/' + changes.base[key].toString();
+                } else {
+                  break;
                 }
               } else {
                 path += '/' + matchedPieces[i];
@@ -218,6 +214,9 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
           }
           if (path.length > 1 && this.outRoute.path.length > 1 && this.outRoute.active) {
             path += this.outRoute.path; //only do this if the outpath was really there
+          }
+          if (path.length === 0) {
+            path = '/'
           }
           if (path !== this.inRoute.path) {
             this.set('inRoute.path', path);

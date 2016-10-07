@@ -111,6 +111,23 @@
             el.set('outRoute.params.page', 'query');
             expect(el.inRoute.path).to.equal('/query/bydate');
           });
+          it('first optional paramters to \'\' will result in inRoute path of /', function() {
+            el.match = '/:page/:sub'
+            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+            el.set('outRoute.params.page', '');
+            expect(el.inRoute.path).to.equal('/');
+          });
+          it('early optional parameters kept in patth if latter empty', function() {
+            el.match = '/:page/:sub'
+            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+            el.set('outRoute.params.sub', '');
+            expect(el.inRoute.path).to.equal('/reports');
+          });
+          it('first optional paramters to null will result in inRoute path of /', function() {
+            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+            el.set('outRoute.params.page', null);
+            expect(el.inRoute.path).to.equal('/');
+          });
         });
         describe('chaining functionality', function() {
           var el;
