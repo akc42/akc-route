@@ -1,29 +1,389 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>akc-route demo</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+<head>
+  <meta charset="utf-8">
+  <title>akc-route demo</title>
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <link rel="import" href="../../polymer/polymer.html">
+  <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+  <link rel="import" href="../../iron-selector/iron-selector.html">
+  <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+  <link rel="import" href="../../iron-icons/iron-icons.html">
 
-    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+  <link rel="import" href="../akc-location.html">
+  <link rel="import" href="../akc-route.html">
+  <style >
+    body {
+      margin: 0;
+    }
+    test-elem {
+      margin: 20px;
+      display: block;
+    }
 
-    <link rel="import" href="../akc-route.html">
+  </style>
+</head>
+<body>
+<dom-module id="active-display">
+  <template>
+    <style>
+      :host {
+        display: block;
+        margin: 4px;
+        @apply(--layout-vertical);
+        border:1px solid green;
+      };
+      .marker {
+        width: 10px;
+        height: 10px;
+        border:2px solid black;
+      }
+      .active {
+        background: red;
+      }
+      .inactive {
+        background: white;
+      }
 
-    <style is="custom-style" include="demo-pages-shared-styles">
+      .indicate {
+        background: blue;
+      }
     </style>
-  </head>
-  <body>
+    <div class$="[[_classify(active)]]"></div>
+    <div><content></content></div>
+  </template>
+  <script>
+    Polymer({
+      is: 'active-display',
+      properties: {
+        active: {
+          type: Boolean,
+          value: false
+        },
+        indicate: {
+          type: Boolean,
+          value: false
+        }
+      },
+       _classify: function(active) {
+        if (active) {
+          if (this.indicate) {
+            return 'marker indicate';
+          }
+          return 'marker active';
+        }
+        return 'marker inactive';
+      }
 
-    <div class="vertical-section-container centered">
-      <h3>Basic akc-route Demo</h3>
-      <demo-snippet>
-        <template>
-          <akc-route></akc-route>
-        </template>
-      </demo-snippet>
-    </div>
+    });
+  </script>
+</dom-module>
 
-  </body>
+  <dom-module id="select-indicator">
+    <template>
+      <style>
+        :host {
+          display:block;
+          margin: 4px;
+          @apply(--layout-horizontal);
+          border:1px solid blue;
+        };
+      </style>
+      <active-display active="[[active]]" indicate>[[name]]</active-display>
+      <div><content></content></div>
+    </template>
+    <script>
+    Polymer({
+      is: 'select-indicator',
+      properties: {
+        selected: {
+          type: Object,
+          observer: '_selectChanged'
+        },
+        active: {
+          type: Boolean,
+          value: false,
+          notify:true
+        },
+        name: {
+          type: String,
+          value: ''
+        }
+      },
+      _selectChanged(selected) {
+        if(selected === this) {
+          this.active = true;
+        } else {
+          this.active = false;
+        }
+      }
+    });
+    </script>
+</dom-module>
+
+
+  <dom-module id='test-elem'>
+    <template>
+      <style>
+        : host {
+          display: block;
+        };
+        active-display div.iron-selected {
+          background: #eee;
+        }
+        .container {
+          @apply(--layout-horizontal);
+        }
+        paper-icon-button {
+          color: blue;
+        }
+      </style>
+      <akc-location route="{{route}}"></akc-location>
+      <akc-route
+        in-route="{{route}}"
+        match="/:page"
+        out-route="{{subRoute}}"></akc-route>
+      <div class="container">
+        <active-display active="[[subRoute.active]]">
+          <div>Main Route</div>
+          <div> Change Route <paper-icon-button id="change" icon="redo" title="redo" ></paper-icon-button></div>
+          <iron-selector selected='[[lastIndex]]'>
+            <template is="dom-repeat" items="[[urls]]">
+              <div>[[item]]</div>
+            </template>
+          </iron-selector>
+        </active-display>
+        <iron-selector
+          role="main"
+          selected="[[mainPage]]"
+          attr-for-selected="name"
+          selected-item="{{mainSelect}}">
+          <select-indicator
+            name="home"
+            selected="[[mainSelect]]">
+            <div>Main Menu</div>
+          </select-indicator>
+          <select-indicator
+            name="appointments"
+            selected="[[mainSelect]]">
+            <akc-route
+              in-route="{{subRoute}}"
+              if-matched="page:appointments"
+              match="/:cid/:pid"
+              out-route="{{cidpidRoute}}"></akc-route>
+            <akc-route
+              in-route="{{cidpidRoute}}"
+              match="/:page"
+              out-route="{{apptRoute}}"></akc-route>
+            <active-display
+              active="[[cidpidRoute.active]]">
+              Appt Cid=[[cidpidRoute.params.cid]] Pid=[[cidpidRoute.params.pid]]
+            </active-display>
+            <active-display active="[[apptRoute.active]]">Appointments Page Active</active-display>
+            <iron-selector
+              selected="[[apptPage]]"
+              attr-for-selected="name"
+              selected-item="{{apptSelect}}">
+              <select-indicator
+               id="overview"
+               name="month"
+               selected="[[apptSelect]]">
+                <iron-selector selected="{{cidpidRoute.params.cid}}" attr-for-selected="cid" selected-item="{{clinicSelect}}">
+                  <select-indicator id="cid1" cid="1" selected="[[clinicSelect]]">London</select-indicator>
+                  <select-indicator id="cid2" cid="2" selected="[[clinicSelect]]">Birmingham</select-indicator>
+                  <select-indicator id="cid3" cid="3" selected="[[clinicSelect]]">Leeds</select-indicator>
+                </iron-selector>
+              </select-indicator>
+              <select-indicator
+                name="day"
+                selected="[[apptSelect]]">
+                <akc-route
+                  in-route="{{apptRoute}}"
+                  if-matched="page:day"
+                  match="/:day"
+                  out-route="{{dayRoute}}"></akc-route>
+                 <active-display
+                    active="[[dayRoute.active]]">Appt Day=[[dayRoute.params.day]]</active-display>
+              </select-indicator>
+            </iron-selector>
+          </select-indicator>
+          <select-indicator
+            name="reports"
+            selected="[[mainSelect]]">
+            <akc-route
+              in-route="{{subRoute}}"
+              if-matched="page:reports"
+              match="/:page"
+              out-route="{{reportsRoute}}"></akc-route>
+            <active-display active="[[reportsRoute.active]]">Reports Page Active</active-display>
+            <iron-selector
+              selected="[[reportPage]]"
+              attr-for-selected="name"
+              selected-item="{{reportSelect}}">
+              <select-indicator
+                name="home"
+                selected="[[reportSelect]]">
+                <div>Report Menu</div>
+              </select-indicator>
+              <select-indicator
+                name="bydate"
+                selected="[[reportSelect]]">
+               <akc-route
+                in-route="{{reportsRoute}}"
+                if-matched="page:bydate"
+                match="/:date"
+                out-route="{{dateRoute}}"></akc-route>
+               <active-display
+                  active="[[dateRoute.active]]"
+                  >Report Date=[[dateRoute.params.date]]</active-display>
+              </select-indicator>
+              <select-indicator
+                name="results"
+                selected="[[reportSelect]]"></select-indicator>
+            </iron-selector>
+          </select-indicator>
+        </iron-selector>
+      </div>
+    </template>
+  </dom-module>
+  <script>
+    document.addEventListener('WebComponentsReady', function() {
+      Polymer({
+        is: 'test-elem',
+        properties: {
+          route: {
+            type: Object
+          },
+          subRoute: {
+            type: Object
+          },
+          cidpidRoute: {
+            type: Object
+          },
+          apptRoute: {
+            type: Object
+          },
+          dayRoute: {
+            type: Object
+          },
+          reportsRoute: {
+            type: Object
+          },
+          dateRoute: {
+            type: Object
+          },
+          mainPage: {
+            type: String,
+            value: '',
+            readOnly: true
+          },
+          apptPage: {
+            type: String,
+            value: '',
+            readOnly: true
+          },
+          reportPage: {
+            type: String,
+            value: '',
+            readOnly: true
+          },
+          clinic: {
+            type: Number
+          },
+          mainSelect: {
+            type: Object,
+            value: function(){return {};}
+          },
+          apptSelect: {
+            type: Object,
+            value: function(){return {};}
+          },
+          clinicSelect: {
+            type: Object,
+            value: function(){return {};}
+          },
+          reportSelect: {
+            type: Object,
+            value: function(){return {};}
+          },
+          lastIndex: {
+            type: Number,
+            value: 0
+          },
+          urls: {
+            type: Array,
+            value: function() {
+              return [
+                '/',
+                '/appointments',
+                '/appointments/2/3',
+                '/appointments/2/3/day/20161001',
+                '/reports',
+                '/reports/results',
+                '/reports',
+                '/reports/bydate/20150101',
+                '/appointments'
+              ];
+            }
+          }
+        },
+        observers: [
+        '_subRoutePageChanged(subRoute.params.page)',
+        '_apptRoutePageChanged(apptRoute.params.page)',
+        '_reportsRoutePageChanged(reportsRoute.params.page)',
+        '_appointmentsClinicActiveChanged(subRoute.params.page, cidpidRoute.active)'
+        ],
+        listeners: {
+          'change.tap': '_changeURL'
+        },
+        attached: function() {
+          this.originalLocation = window.location.href;
+          this.switchPath(this.urls[this.lastIndex]);
+        },
+        detached: function() {
+            window.history.pushState({}, null, this.originalLocation);
+        },
+        switchPath: function(path) {
+          window.history.pushState({}, null, path);
+          window.dispatchEvent(new CustomEvent('location-changed'));
+        },
+        _subRoutePageChanged: function(page) {
+          this._setMainPage(page || 'home');
+        },
+        _apptRoutePageChanged: function(page) {
+          this._setApptPage(page || 'month');
+        },
+        _reportsRoutePageChanged: function(page) {
+          this._setReportPage(page || 'home');
+        },
+        _appointmentsClinicActiveChanged: function(page,acid) {
+          var cid = 1
+          if (page === 'appointments' && !acid) {
+          //We got an appointment url without cid pid
+            if (this.cidpidRoute.params && this.cidpidRoute.params.cid) {
+              //try and use any value that might have been there from before - better ergonomics
+              cid = this.cidpidRoute.params.cid
+            }
+            this.async(function() {
+              this.set('cidpidRoute.params', {cid: cid, pid: 0});
+            });
+          } else if (page !== 'appointments') {
+            this.set('cidpidRoute.params.pid', 0); //ensure we clean up if leave booking
+          }
+        },
+        _changeURL: function() {
+
+          this.lastIndex++;
+          if(this.lastIndex >= this.urls.length) {
+            this.lastIndex = 0;
+          }
+          this.switchPath(this.urls[this.lastIndex]);
+        }
+      });
+    });
+  </script>
+  <test-elem></test-elem>
+
+
+</body>
 </html>
