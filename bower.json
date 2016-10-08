@@ -1,18 +1,20 @@
 {
   "name": "akc-route",
-  "version": "0.0.9",
   "description": "A distributed router inspired by PolymerElements/app-route",
   "authors": [
     "Alan Chandler"
   ],
+  "licence": "MIT",
   "keywords": [
     "web-components",
     "polymer",
     "routing"
   ],
-  "main": [
-    "akc-route.html",
-    "akc-location.html"
+  "ignore": [
+    "index.html",
+    "akc-route.sublime-project",
+    "test/**",
+    "demo/**"
   ],
   "repository": {
     "type": "git",
