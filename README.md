@@ -33,7 +33,6 @@ Note - changes are atomic.  That is if the url changes, all of the above propert
 
 Three input properties (ie they are not notified) can be given to `akc-location`.  These are:-
 * `useHashAsPath` if present this property signifies that `<akc-location` should only use hash paths part of the url
-* `urlSpaceRegex` can be used to tell the router to capture clicks for urls that match the regex and apply routing for them. Note, this is just a pass through to `<iron-location>`
 * `dwellTime` a timer which if the url changes within that time from the previous change this change is replaced on the history stack rather than pushing a new entry. 
 
 ## `<akc-route>` element
