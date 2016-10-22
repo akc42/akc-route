@@ -101,10 +101,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
       },
       observers: [
         '_inRouteChanged(ifMatched, match, inRoute.*)',
-        '_pathChanged(outRoute.active,outRoute.path)',
-        '_paramsChanged(outRoute.params.*)',
-        '_inRouteQueryChanged(inRoute.query)',
-        '_outRouteQueryChanged(outRoute.query)'
+        '_outRouteChanged(outRoute.*)'
       ],
       _inRouteChanged: function(ifMatched, match, changes) {
         var completed = false;
@@ -176,50 +173,48 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         }
 
       },
-      _pathChanged: function(active,path) {
-        if (!this.outRouteUpdateInProgress && active) {
-          //Look at inRoute's path and work out how much will be coming off because of match
-          var matchedPieces = this.match.split('/');
-          var urlPieces = this.inRoute.path.split('/');
-          urlPieces = urlPieces.splice(0,matchedPieces.length);
-          var newPath = urlPieces.join('/');
-          if (path.length > 1 && path.substring(0,1) === '/') {
-            newPath += path;
-          }
-          this.set('inRoute.path', urlPieces.join('/') + path);
-        }
-      },
-      _paramsChanged: function(changes) {
-        if (!this.outRouteUpdateInProgress &&
-          this.inRoute.active && this._ifMatches(this.ifMatched)) {
-          //only do anything if this route is active
-          var path = '' ;//calculate what path should be
-          var matchedPieces = this.match.split('/');
-          if (matchedPieces[0] === '') {
-            matchedPieces.shift();  //not interested in blank front
-          }
-          for(var i = 0; i < matchedPieces.length; i++) {
-            if (matchedPieces[i].length !== 0) {
-              if (matchedPieces[i].substring(0,1) === ':') {
-                var key = matchedPieces[i].substring(1);
-                if (changes.base[key]) {
-                  path += '/' + changes.base[key].toString();
+      _outRouteChanged: function(changes) {
+        if (!this.outRouteUpdateInProgress) {
+          if (this.inRoute.active && this._ifMatches(this.ifMatched)) {
+            //only do anything if this route is active
+            var path = '' ;//calculate what path should be
+            var matchedPieces = this.match.split('/');
+            if (matchedPieces[0] === '') {
+              matchedPieces.shift();  //not interested in blank front
+            }
+            for(var i = 0; i < matchedPieces.length; i++) {
+              if (matchedPieces[i].length !== 0) {
+                if (matchedPieces[i].substring(0,1) === ':') {
+                  var key = matchedPieces[i].substring(1);
+                  if (changes.base.params[key]) {
+                    path += '/' + changes.base.params[key].toString();
+                  } else {
+                    if (!changes.base.active) {
+                      return;  //We can't update a none active route if its not going to become active'
+                    }
+                    break; 
+                  }
                 } else {
-                  break;
+                  if (!changes.base.active) {
+                    return;  //Unless we matched before, or we are forcing a new route we can't continue (by forcing active)'
+                  }
+                  path += '/' + matchedPieces[i];
                 }
-              } else {
-                path += '/' + matchedPieces[i];
               }
             }
-          }
-          if (path.length > 1 && this.outRoute.path.length > 1 && this.outRoute.active) {
-            path += this.outRoute.path; //only do this if the outpath was really there
-          }
-          if (path.length === 0) {
-            path = '/'
-          }
-          if (path !== this.inRoute.path) {
-            this.set('inRoute.path', path);
+            if (path.length > 1 && changes.base.path.length > 1 ) {
+              path += changes.base.path; //only do this if the outpath was really there
+            }
+            if (path.length === 0) {
+              path = '/'
+            }
+            var newRoute = {
+              path: path,
+              active: true,
+              params: this.inRoute.params,
+              query: changes.base.active ? changes.base.query : this.inRoute.query //Only propate query if active
+            }
+            this.set('inRoute', newRoute); //This should go back and setup outRoute query
           }
         }
       },
@@ -243,16 +238,6 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         this.outRouteUpdateInProgress = true;
         this.set('outRoute.active', false);
         this.outRouteUpdateInProgress = false;
-      },
-      _inRouteQueryChanged: function(query) {
-        this.outRouteUpdateInProgress = true;
-        this.set('outRoute.query', query);
-        this.outRouteUpdateInProgress = false;
-      },
-      _outRouteQueryChanged: function(query) {
-        if(!this.outRouteUpdateInProgress) {
-          this.set('inRoute.query', query);
-        }
       }
 
     });

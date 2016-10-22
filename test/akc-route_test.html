@@ -48,6 +48,7 @@
 
     <script>
       describe('akc-route', function() {
+this.timeout(0); //------------------------------------------------------------
         describe('basic functionality', function() {
           var el
           beforeEach(function() {
@@ -96,10 +97,15 @@
             el.set('inRoute.query', {date: '20160101'});
             expect(el.outRoute.query).to.eql({date: '20160101'});
           });
-          it('query parameters passed upwards', function() {
-            el.inRoute = {path: '', active: true, params: {}, query: {}};
+          it('query parameters passed upwards provided outRoute is active', function() {
+            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
             el.set('outRoute.query', {date: '20161231'});
             expect(el.inRoute.query).to.eql({date: '20161231'})
+          });
+          it('query parameters not passed upwards if outRoute Not Active', function() {
+            el.inRoute = {path: '', active: true, params: {}, query: {}};
+            el.set('outRoute.query', {date: '20161231'});
+            expect(el.inRoute.query).to.eql({})
           });
           it('changes in parameters effect in-route path', function() {
             el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
@@ -161,14 +167,28 @@
             el.set('subRoute.params', {page: ''});
             expect(el.route.path).to.equal('/');
           });
-          it('reflect parameter changes that active out-route', function() {
+          it('reflect parameter changes that activate out-route', function() {
             el.match = '/:userid/:classid'
             el.route = {path: '/4', active: true, params: {}, query: {}};
             expect(el.subSubRoute.active).to.be.false;
             el.set('subRoute.params', {userid: 4, classid: 5});
             expect(el.subSubRoute.active).to.be.true;
           });
-
+          it('home route should not allow downward propagation of active', function() {
+            el.match = '/:page';
+            el.ifMatch = 'page:appintments'
+            el.route = {path: '/appointments/1', active: true, params: {}, query: {}};
+            el.route = {path: '/', active: true, params: {}, query: {}};
+            expect(el.subSubRoute.active).to.be.false;
+          });
+          it('we can force a change througn non active route with query parameters upwards if we set a whole new route', function() {
+            el.match = '/:page';
+            el.ifMatch = 'page:bydate'
+            el.route = {path: '/bydate/20160101', active: true, params:{}, query: {}};
+            el.subRoute = {path: '/missd', active: true, params: {page: 'query'}, query: {return: '/bydate/20160101'}};
+            expect(el.route.query).to.deep.equal({return: '/bydate/20160101'});
+            expect(el.route.path).to.equal('/query/missd'); 
+          });
         });
 
       });
