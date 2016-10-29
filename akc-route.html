@@ -186,7 +186,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
               if (matchedPieces[i].length !== 0) {
                 if (matchedPieces[i].substring(0,1) === ':') {
                   var key = matchedPieces[i].substring(1);
-                  if (changes.base.params[key]) {
+                  if (changes.base.params[key] != null && changes.base.params[key] !== '') {
                     path += '/' + changes.base.params[key].toString();
                   } else {
                     if (!changes.base.active) {

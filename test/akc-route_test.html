@@ -117,7 +117,7 @@ this.timeout(0); //------------------------------------------------------------
             el.set('outRoute.params.page', 'query');
             expect(el.inRoute.path).to.equal('/query/bydate');
           });
-          it('first optional paramters to \'\' will result in inRoute path of /', function() {
+          it('first optional parameters to \'\' will result in inRoute path of /', function() {
             el.match = '/:page/:sub'
             el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
             el.set('outRoute.params.page', '');
@@ -173,6 +173,13 @@ this.timeout(0); //------------------------------------------------------------
             expect(el.subSubRoute.active).to.be.false;
             el.set('subRoute.params', {userid: 4, classid: 5});
             expect(el.subSubRoute.active).to.be.true;
+          });
+          it('reflect parameter change with value 0', function() {
+            el.match = '/:page';
+            el.route = {path: '/appointments', active: true,  params: {}, query: {}};
+            expect(el.subSubRoute.params.page).to.equal('');
+            el.set('subSubRoute.params.page', 0);
+            expect(el.subSubRoute.params.page).to.equal(0);
           });
           it('home route should not allow downward propagation of active', function() {
             el.match = '/:page';
