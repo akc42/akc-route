@@ -202,7 +202,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
                 }
               }
             }
-            if (path.length > 1 && changes.base.path.length > 1 ) {
+            if (path.length > 1 && changes.base.active && changes.base.path.length > 1 ) {
               path += changes.base.path; //only do this if the outpath was really there
             }
             if (path.length === 0) {

@@ -146,19 +146,19 @@ this.timeout(0); //------------------------------------------------------------
             el.ifMatch = 'page:appointment'
             el.match = '/:page'
             el.route = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            expect(el.subSubRoute.active).to.be.false;
+            expect(el.subsubRoute.active).to.be.false;
           });
           it('changes to lower paths can propagate up provided lower is active', function() {
             el.match = '/reports';
             el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
-            el.set('subSubRoute.path', '/20161231');
+            el.set('subsubRoute.path', '/20161231');
             expect(el.route.path).to.equal('/reports/bydate/20161231');
           });
           it('changes to lower paths don\'t propagate up if lower not active', function() {
             el.match = '/reports';
             el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
             el.$.route2.match = '/query';
-            el.set('subSubRoute.path', '/20161231');
+            el.set('subsubRoute.path', '/20161231');
             expect(el.route.path).to.equal('/reports/bydate/20160101');
           });
           it('zero length parameter change limits actuve', function() {
@@ -170,23 +170,23 @@ this.timeout(0); //------------------------------------------------------------
           it('reflect parameter changes that activate out-route', function() {
             el.match = '/:userid/:classid'
             el.route = {path: '/4', active: true, params: {}, query: {}};
-            expect(el.subSubRoute.active).to.be.false;
+            expect(el.subsubRoute.active).to.be.false;
             el.set('subRoute.params', {userid: 4, classid: 5});
-            expect(el.subSubRoute.active).to.be.true;
+            expect(el.subsubRoute.active).to.be.true;
           });
           it('reflect parameter change with value 0', function() {
             el.match = '/:page';
             el.route = {path: '/appointments', active: true,  params: {}, query: {}};
-            expect(el.subSubRoute.params.page).to.equal('');
-            el.set('subSubRoute.params.page', 0);
-            expect(el.subSubRoute.params.page).to.equal(0);
+            expect(el.subsubRoute.params.page).to.equal('');
+            el.set('subsubRoute.params.page', 0);
+            expect(el.subsubRoute.params.page).to.equal(0);
           });
           it('home route should not allow downward propagation of active', function() {
             el.match = '/:page';
             el.ifMatch = 'page:appintments'
             el.route = {path: '/appointments/1', active: true, params: {}, query: {}};
             el.route = {path: '/', active: true, params: {}, query: {}};
-            expect(el.subSubRoute.active).to.be.false;
+            expect(el.subsubRoute.active).to.be.false;
           });
           it('we can force a change througn non active route with query parameters upwards if we set a whole new route', function() {
             el.match = '/:page';
@@ -195,6 +195,14 @@ this.timeout(0); //------------------------------------------------------------
             el.subRoute = {path: '/missd', active: true, params: {page: 'query'}, query: {return: '/bydate/20160101'}};
             expect(el.route.query).to.deep.equal({return: '/bydate/20160101'});
             expect(el.route.path).to.equal('/query/missd'); 
+          }); 
+          it('should not add non active path to new derived path', function() {
+            el.match = '/:page';
+            el.$.route2.match = '/:cid/:pid'
+            el.route = {path: '/appointments/1/0/20160101', active: true, params: {}, query: {}};
+            el.route = {path: '/appointments', active: true, params: {}, query: {}};
+            el.set('subsubRoute.params', {cid: 1, pid: 0});
+            expect(el.route.path).to.equal('/appointments/1/0');
           });
         });
 

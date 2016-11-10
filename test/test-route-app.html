@@ -37,7 +37,12 @@
       in-route="{{subRoute}}"
       if-matched="[[ifMatch]]"
       match="/:page"
-      out-route="{{subSubRoute}}"></akc-route>
+      out-route="{{subsubRoute}}"></akc-route>
+    <akc-route
+      id="route3"
+      in-route="{{subsubRoute}}"
+      match="/:date"
+      out-route="{{subsubsubRoute}}"></akc-route>
   </template>
   <script>
     Polymer({
@@ -50,6 +55,9 @@
           type: Object
         },
         subsubRoute: {
+          type: Object
+        },
+        subsubsubRoute: {
           type: Object
         },
         match: {
