@@ -142,7 +142,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
               if (matchedPieces[i].substring(0,1) === ':') {
                 var key = matchedPieces[i].substring(1);
                 if (key.length > 0) {
-                  if (/^\d+$/.test(segment)) {
+                  if (/^-?\d+$/.test(segment)) {
                     segment = parseInt(segment,10);
                   }
                   newRoute.params[key] = segment;

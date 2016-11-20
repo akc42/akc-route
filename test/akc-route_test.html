@@ -92,6 +92,19 @@ this.timeout(0); //------------------------------------------------------------
             el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
             expect(el.outRoute.params.page).to.equal('staff');
           });
+          it('if matched parameter is all digits with a leading minus, params provides a number', function() {
+            el.inRoute = {path: '/-500/staff', active: true, params: {}, query: {}};
+            expect(el.outRoute.params.page).to.equal(-500);
+            expect(el.outRoute.params.page).to.not.equal('-500');
+          });
+          it('if matched parameter is all digits and non leading minus, params provides a string', function() {
+            el.inRoute = {path: '/5-01/staff', active: true, params: {}, query: {}};
+            expect(el.outRoute.params.page).to.not.equal(501);
+            expect(el.outRoute.params.page).to.not.equal(-501);
+            expect(el.outRoute.params.page).to.equal('5-01');
+            el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
+            expect(el.outRoute.params.page).to.equal('staff');            
+          });
           it('query parameters passed downwards', function() {
             el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
             el.set('inRoute.query', {date: '20160101'});
