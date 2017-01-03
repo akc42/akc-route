@@ -31,7 +31,7 @@ Note - changes are atomic.  That is if the url changes, all of the above propert
 
 `<akc-location>` will respond to an `akc-location` event and re-read the url. It will also fire this event just after it has updated `route` or the address bar
 
-Three input properties (ie they are not notified) can be given to `akc-location`.  These are:-
+Two input properties (ie they are not notified) can be given to `akc-location`.  These are:-
 * `useHashAsPath` if present this property signifies that `<akc-location` should only use hash paths part of the url
 * `dwellTime` a timer which if the url changes within that time from the previous change this change is replaced on the history stack rather than pushing a new entry. 
 
@@ -45,7 +45,7 @@ When `inRoute` changes an `<akc-route>` element processes the changes by looking
 
 The `match` consumes part of the url based on the number of segments it has and how may segments are provided in the `path` property of `inRoute`. Each segment can either be a literal string that is being matched in the url, or if it starts with a ':' character means it is a parameters which will be extracted from the url and placed within the `params` property of the `outRoute`.  An empty literal segment will only match an empty segment, a parameterised segment will match any string of characters up to the next '/' (or end of string) including the empty string. 
 
-Each matched segment where the `match` property defines a parameter will be added to the `outRoute.params` object with the key defined by the `match` property name. If the matched portion of the url consists solely of the digits "0" to "9" (they will be in string form) the paramater will be converted to an integer before being placed in the `params` property. 
+Each matched segment where the `match` property defines a parameter will be added to the `outRoute.params` object with the key defined by the `match` property name. If the matched portion of the url consists solely of the digits "0" to "9" with an optional leading "-" (they will be in string form) the paramater will be converted to an integer before being placed in the `params` property.  
 
 As a route matches as described above the part of the url matched is removed from the `path` part of the url in `outRoute`. The main point to be made is that the removed part is  **before** a slash. **If** the last match was the end of the url, **and** `inRoute.path` is not already just a '/' **and** the `match` property did not end in a traling slash (or was a single '/' all on its own) then the `outRoute.path` becomes a single '/'
 
