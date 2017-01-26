@@ -208,6 +208,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
             if (path.length === 0) {
               path = '/'
             }
+            //don't update upwards if we are not changing anything.
             if (path !== this.inRoute.path || (changes.base.active && changes.base.query !== this.inRoute.query)) {
               var newRoute = {
                 path: path,
