@@ -210,13 +210,17 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
             }
             //don't update upwards if we are not changing anything.
             if (path !== this.inRoute.path || (changes.base.active && changes.base.query !== this.inRoute.query)) {
-              var newRoute = {
-                path: path,
-                active: true,
-                params: this.inRoute.params,
-                query: changes.base.active ? changes.base.query : this.inRoute.query //Only propate query if active
-              };
-              this.set('inRoute', newRoute); //This should go back and setup outRoute query
+              if (changes.base.active && changes.base.query !== this.inRoute.query) {
+                var newRoute = {
+                  path: path,
+                  active: true,
+                  params: this.inRoute.params,
+                  query: changes.base.active ? changes.base.query : this.inRoute.query //Only propate query if active
+                };
+                this.set('inRoute', newRoute);
+              } else {
+                this.set('inRoute.path', path); //This should go back and setup outRoute query
+              }
             }
           }
         }
