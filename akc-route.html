@@ -1,6 +1,6 @@
 <!--
 @license
-    Copyright (c) 2016 Alan Chandler, all rights reserved
+    Copyright (c) 2016-2017 Alan Chandler, all rights reserved
 
     Permission is hereby granted, free of charge, to any person obtaining
     a copy of this software and associated documentation files (the
@@ -165,62 +165,66 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
           } else {
             newRoute.path = '/' + urlPieces.join('/');
           }
-          this.outRouteUpdateInProgress = true;
-          this.set('outRoute', newRoute);
-          this.outRouteUpdateInProgress = false;
+          if (!this.outRoute || !this.outRoute.active ||
+            JSON.stringify(this.outRoute.params) !== JSON.stringify(newRoute.params) ||
+            JSON.stringify(this.outRoute.query) !== JSON.stringify(newRoute.query)) {
+
+            this.set('outRoute', newRoute);
+          } else if (this.outRoute.path !== newRoute.path) {
+            this.set('outRoute.path', newRoute.path);
+          }
         } else {
           this._clearOutActive();
         }
 
       },
       _outRouteChanged: function(changes) {
-        if (!this.outRouteUpdateInProgress) {
-          if (this.inRoute.active && this._ifMatches(this.ifMatched)) {
-            //only do anything if this route is active
-            var path = '' ;//calculate what path should be
-            var matchedPieces = this.match.split('/');
-            if (matchedPieces[0] === '') {
-              matchedPieces.shift();  //not interested in blank front
-            }
-            for(var i = 0; i < matchedPieces.length; i++) {
-              if (matchedPieces[i].length !== 0) {
-                if (matchedPieces[i].substring(0,1) === ':') {
-                  var key = matchedPieces[i].substring(1);
-                  if (changes.base.params[key] != null && changes.base.params[key] !== '') {
-                    path += '/' + changes.base.params[key].toString();
-                  } else {
-                    if (!changes.base.active) {
-                      return;  //We can't update a none active route if its not going to become active'
-                    }
-                    break; 
-                  }
+        if (this.inRoute.active && this._ifMatches(this.ifMatched)) {
+          //only do anything if this route is active
+          var path = '' ;//calculate what path should be
+          var matchedPieces = this.match.split('/');
+          if (matchedPieces[0] === '') {
+            matchedPieces.shift();  //not interested in blank front
+          }
+          for(var i = 0; i < matchedPieces.length; i++) {
+            if (matchedPieces[i].length !== 0) {
+              if (matchedPieces[i].substring(0,1) === ':') {
+                var key = matchedPieces[i].substring(1);
+                if (changes.base.params[key] != null && changes.base.params[key] !== '') {
+                  path += '/' + changes.base.params[key].toString();
                 } else {
                   if (!changes.base.active) {
-                    return;  //Unless we matched before, or we are forcing a new route we can't continue (by forcing active)'
+                    return;  //We can't update a none active route if its not going to become active'
                   }
-                  path += '/' + matchedPieces[i];
+                  break;
                 }
-              }
-            }
-            if (path.length > 1 && changes.base.active && changes.base.path.length > 1 ) {
-              path += changes.base.path; //only do this if the outpath was really there
-            }
-            if (path.length === 0) {
-              path = '/'
-            }
-            //don't update upwards if we are not changing anything.
-            if (path !== this.inRoute.path || (changes.base.active && changes.base.query !== this.inRoute.query)) {
-              if (changes.base.active && changes.base.query !== this.inRoute.query) {
-                var newRoute = {
-                  path: path,
-                  active: true,
-                  params: this.inRoute.params,
-                  query: changes.base.active ? changes.base.query : this.inRoute.query //Only propate query if active
-                };
-                this.set('inRoute', newRoute);
               } else {
-                this.set('inRoute.path', path); //This should go back and setup outRoute query
+                if (!changes.base.active) {
+                  return;  //Unless we matched before, or we are forcing a new route we can't continue (by forcing active)'
+                }
+                path += '/' + matchedPieces[i];
               }
+            }
+          }
+          if (path.length > 1 && changes.base.active && changes.base.path.length > 1 ) {
+            path += changes.base.path; //only do this if the outpath was really there
+          }
+          if (path.length === 0) {
+            path = '/'
+          }
+          //don't update upwards if we are not changing anything.
+          if (path !== this.inRoute.path || (changes.base.active && changes.base.query !== this.inRoute.query)) {
+            if (changes.base.active && changes.base.query !== this.inRoute.query) {
+              //query changed and we are active so propagate it
+              var newRoute = {
+                path: path,
+                active: true,
+                params: this.inRoute.params,
+                query: changes.base.query
+              };
+              this.set('inRoute', newRoute);
+            } else {
+              this.set('inRoute.path', path); //This should go back and setup outRoute query
             }
           }
         }
@@ -242,11 +246,8 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
         }
       },
       _clearOutActive: function() {
-        this.outRouteUpdateInProgress = true;
         this.set('outRoute.active', false);
-        this.outRouteUpdateInProgress = false;
       }
-
     });
   })();
 </script>
