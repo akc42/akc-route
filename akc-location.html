@@ -38,101 +38,105 @@ this to and from a `route` object that can be passed fown a chain of such object
 @demo demo/index.html
 -->
 <dom-module id="akc-location">
-<template>
+  <template>
 
-<!-- this already converts between query string and query object, so no need to implement anything
-  Just reuse this -->
-  <iron-query-params
-      params-string="{{__queryString}}"
-      params-object="{{__query}}"></iron-query-params>
-</template>
+  <!-- this already converts between query string and query object, so no need to implement anything
+    Just reuse this -->
+    <iron-query-params
+        params-string="{{__queryString}}"
+        params-object="{{__query}}"></iron-query-params>
+  </template>
   <script>
-    'use strict';
 
-    Polymer({
-      is: 'akc-location',
-      properties: {
-        /**
-         * the route property contains the following fields.
-         *
-         *  * `prefix` for `<akc-location>` this will always be the empty string, but further down
-         *     the chain of `<akc-route>` elements it will show the amount of url consumed so far.
-         *  * `path` shows the url path that has not yet been consumed
-         *  * `active` a boolean that indicates whether the path so far has been matched. For
-         *     `<akc-location>` this will be true once the first route has initialised
-         *  * `params` further down the `<akc-route>` chain the `out-route.params`. property will
-         *     contain an object of the matched parameters from the route. Fpr this element it
-         *     will always contain the empty object (ie {});
-         *  * `query` will contain an object representation of the search parameters from the url.
-         *
-         *  Note - changes are atomic.  That is if the url changes, all of the above properties of
-         *  the `route` object will set before any observer on the object or one of its properties
-         *  sees a change.
-         * @type(object)
-         */
-        route: {
-          type: Object,
-          value: function() {return { path: '', active: false, params: {}, query: {}};},
-          notify: true
-        },
-        /**
-         * In many scenarios, it is convenient to treat the `hash` as a stand-in
-         * alternative to the `path`. For example, if deploying an app to a static
-         * web server (e.g., Github Pages) - where one does not have control over
-         * server-side routing - it is usually a better experience to use the hash
-         * to represent paths through one's app.
-         *
-         * When this property is set to true, the `hash` will be used in place of
+    class akcLocation extends Polymer.Element {
+      static get is() { return 'akc-location';}
+      static get properties() {
+        return {
+          /**
+          * the route property contains the following fields.
+          *
+          *  * `prefix` for `<akc-location>` this will always be the empty string, but further down
+          *     the chain of `<akc-route>` elements it will show the amount of url consumed so far.
+          *  * `path` shows the url path that has not yet been consumed
+          *  * `active` a boolean that indicates whether the path so far has been matched. For
+          *     `<akc-location>` this will be true once the first route has initialised
+          *  * `params` further down the `<akc-route>` chain the `out-route.params`. property will
+          *     contain an object of the matched parameters from the route. Fpr this element it
+          *     will always contain the empty object (ie {});
+          *  * `query` will contain an object representation of the search parameters from the url.
+          *
+          *  Note - changes are atomic.  That is if the url changes, all of the above properties of
+          *  the `route` object will set before any observer on the object or one of its properties
+          *  sees a change.
+          * @type(object)
+          */
+          route: {
+            type: Object,
+            value: function() {return { path: '', active: false, params: {}, query: {}};},
+            notify: true
+          },
+          /**
+          * In many scenarios, it is convenient to treat the `hash` as a stand-in
+          * alternative to the `path`. For example, if deploying an app to a static
+          * web server (e.g., Github Pages) - where one does not have control over
+          * server-side routing - it is usually a better experience to use the hash
+          * to represent paths through one's app.
+          *
+          * When this property is set to true, the `hash` will be used in place of
 
-         * the `path` for generating a `route`.
-         * @type(boolean)
-         */
-        useHashAsPath: {
-          type: Boolean,
-          value: false
-        },
-        /**
-         * If the user was on a URL for less than `dwellTime` milliseconds, it
-         * won't be added to the browser's history, but instead will be replaced
-         * by the next entry.
-         *
-         * This is to prevent large numbers of entries from clogging up the user's
-         * browser history. Disable by setting to a negative number.
-         * @type(number)
-         */
-        dwellTime: {
-          type: Number,
-          value: 2000
-        },
-        __query: {
-          type: Object
-        },
-        __queryString: {
-          type: String
-        }
+          * the `path` for generating a `route`.
+          * @type(boolean)
+          */
+          useHashAsPath: {
+            type: Boolean,
+            value: false
+          },
+          /**
+          * If the user was on a URL for less than `dwellTime` milliseconds, it
+          * won't be added to the browser's history, but instead will be replaced
+          * by the next entry.
+          *
+          * This is to prevent large numbers of entries from clogging up the user's
+          * browser history. Disable by setting to a negative number.
+          * @type(number)
+          */
+          dwellTime: {
+            type: Number,
+            value: 2000
+          },
+          __query: {
+            type: Object
+          },
+          __queryString: {
+            type: String
+          }
 
-      },
-      hostAttributes: {
-        hidden: true
-      },
-      attached: function() {
+        };
+      }
+      static get observers() {
+        return [
+          '_routeChanged(route.path,route.query)'
+        ];
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        this._ensureAttribute('hidden', true);
         this.routeUpdateInProgress = false;
         this.urlUpdateInProgress = false;
-        this.listen(window, 'hashchange', '_urlChanged');
-        this.listen(window, 'popstate', '_urlChanged');
-        this.listen(window, 'location-changed','_urlChanged' );
+        this._urlChanged = this._urlChanged.bind(this);
+        window.addEventListener('hashchange', this._urlChanged);
+        window.addEventListener('popstate', this._urlChanged);
+        window.addEventListener('location-changed',this._urlChanged);
         this._urlChanged(); //set initial conditions.
         this._lastChangedAt = window.performance.now() - (this.dwellTime - 200);
-      },
-      detached: function() {
-        this.unlisten(window, 'location-changed','_urlChanged');
-        this.unlisten(window, 'popstate', '_urlChanged');
-        this.unlisten(window, 'hashchange', '_urlChanged');
-      },
-      observers: [
-        '_routeChanged(route.path,route.query)'
-      ],
-      _urlChanged: function() {
+      }
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener('location-changed',this._urlChanged);
+        window.removeEventListener('popstate', this._urlChanged);
+        window.removeEventListener('hashchange', this._urlChanged);
+      }
+      _urlChanged() {
         if (!this.urlUpdateInProgress) {
           var hash = window.decodeURIComponent(window.location.hash.substring(1));
           var path = window.decodeURIComponent(window.location.pathname);
@@ -152,8 +156,8 @@ this to and from a `route` object that can be passed fown a chain of such object
           };
           this.routeUpdateInProgress = false;
         }
-      },
-      _routeChanged: function(path, query) {
+      }
+      _routeChanged(path, query) {
         if (this.routeUpdateInProgress === undefined) {
           return; //don't want to do anything until we are established
         }
@@ -189,7 +193,7 @@ this to and from a `route` object that can be passed fown a chain of such object
           this.urlUpdateInProgress = false;
         }
       }
-    });
-
+    }
+    customElements.define(akcLocation.is, akcLocation);
   </script>
 </dom-module>

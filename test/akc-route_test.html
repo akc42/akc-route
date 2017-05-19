@@ -48,7 +48,6 @@
 
     <script>
       describe('akc-route', function() {
-this.timeout(0); //------------------------------------------------------------
         describe('basic functionality', function() {
           var el
           beforeEach(function() {
@@ -56,7 +55,7 @@ this.timeout(0); //------------------------------------------------------------
             el.inRoute = {};
           })
           it('instantiates itself', function() {
-            expect(el.is).to.equal('akc-route');
+            expect(el.constructor.name).to.equal('akcRoute');
           });
           it('match a simple route', function() {
             el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
