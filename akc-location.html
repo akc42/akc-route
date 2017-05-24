@@ -22,7 +22,8 @@
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -->
 
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/lib/utils/render-status.html">
 <link rel="import" href="../iron-location/iron-query-params.html">
 
 <!--
@@ -127,8 +128,10 @@ this to and from a `route` object that can be passed fown a chain of such object
         window.addEventListener('hashchange', this._urlChanged);
         window.addEventListener('popstate', this._urlChanged);
         window.addEventListener('location-changed',this._urlChanged);
-        this._urlChanged(); //set initial conditions.
-        this._lastChangedAt = window.performance.now() - (this.dwellTime - 200);
+         Polymer.RenderStatus.afterNextRender(this, function() {
+          this._urlChanged(); //set initial conditions. but after siblings are ready.
+          this._lastChangedAt = window.performance.now() - (this.dwellTime - 200);
+        });
       }
       disconnectedCallback() {
         super.disconnectedCallback();

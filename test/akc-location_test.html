@@ -71,12 +71,18 @@
         beforeEach(function() {
           el=fixture('basic');
         });
-        it('expect route to be exposed', function() {
-          expect(el.route).to.be.ok;
-          expect(el.route.active).to.be.true;
+        it('expect route to be exposed', function(done) {
+          Polymer.RenderStatus.afterNextRender(this, function() {
+            expect(el.route).to.be.ok;
+            expect(el.route.active).to.be.true;
+            done();
+          });
         });
-        it('expect route to path to reflect path', function() {
-          expect(el.route.path).to.equal(window.location.pathname);
+        it('expect route to path to reflect path', function(done) {
+          Polymer.RenderStatus.afterNextRender(this, function() {
+            expect(el.route.path).to.equal(window.location.pathname);
+            done();
+          });
         });
         it('expect search string changes to reflect in route', function() {
           setLocation(window.location.pathname + '?date=20160101&staff=2');
