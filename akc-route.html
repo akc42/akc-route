@@ -108,9 +108,8 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
     }
     _inRouteChanged (ifMatched, match, changes) {
       if (changes.base === undefined) return;
-      var completed = false;
-      if (changes.base === undefined) return;
       if (changes.base.active && this._ifMatches(ifMatched) && changes.base.path.length > 0) {
+        var completed = false;
         if (match.slice(-1)  === '/') {
           completed = true;  //Special meaning
           if (match.length > 1) {
