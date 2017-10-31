@@ -184,7 +184,7 @@ to use.  This is my attempt to provide equivalent functionality but in a slightl
     }
     _outRouteChanged (changes) {
       if (this.inRoute === undefined || changes.base === undefined) return;
-      if (this.inRoute.active && this._ifMatches(this.ifMatched)) {
+      if (changes.base.active && this._ifMatches(this.ifMatched)) {
         //only do anything if this route is active
         var path = '' ;//calculate what path should be
         var matchedPieces = this.match.split('/');
