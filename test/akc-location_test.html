@@ -27,10 +27,10 @@
     <title>akc-route test</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../node_modules/wct-browser-legacy/browser.js"></script>
 
-    <link rel="import" href="../akc-location.html">
+    <script type="module" src="../akc-location.js"></script>
 
   </head>
   <body>
@@ -47,64 +47,65 @@
     </test-fixture>
 
 
-    <script>
-    function setLocation(url) {
-      window.history.pushState({}, '', url);
-      window.dispatchEvent(new CustomEvent('location-changed'));
-    }
+    <script type="module">
+import '../akc-location.js';
+import { afterNextRender } from '@polymer/polymer/lib/utils/render-status.js';
+function setLocation(url) {
+  window.history.pushState({}, '', url);
+  window.dispatchEvent(new CustomEvent('location-changed'));
+}
 
-    describe('<akc-location>', function() {
-      this.timeout(0); //TMP -----------------------------------------------------------------
-      var originalLocation;
-      beforeEach( function() {
-        originalLocation = window.location.href;
-      });
-      afterEach(function() {
-        window.history.replaceState({}, '', originalLocation);
-      });
-      it('instantiates itself', function() {
-        var el = fixture('basic');
-        expect(el.constructor.name).to.equal('akcLocation');
-      });
-      describe('basic tests', function() {
-        var el;
-        beforeEach(function() {
-          el=fixture('basic');
-        });
-        it('expect route to be exposed', function(done) {
-          Polymer.RenderStatus.afterNextRender(this, function() {
-            expect(el.route).to.be.ok;
-            expect(el.route.active).to.be.true;
-            done();
-          });
-        });
-        it('expect route to path to reflect path', function(done) {
-          Polymer.RenderStatus.afterNextRender(this, function() {
-            expect(el.route.path).to.equal(window.location.pathname);
-            done();
-          });
-        });
-        it('expect search string changes to reflect in route', function() {
-          setLocation(window.location.pathname + '?date=20160101&staff=2');
-          expect(el.route.query).to.deep.equal({date: '20160101', staff: '2'});
-        });
-        it('reflect changes to route path to url', function() {
-          el.set('route.path', '/reports/bydate/20161231');
-          expect(window.location.pathname).to.equal('/reports/bydate/20161231');
-        });
-        it('reflect query string changes to route.query', function() {
-          el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
-          expect(window.location.search).to.equal('?firstname=Joe&lastname=Bloggs');
-        });
-        it('seting query to null object in route should clear qhery string', function() {
-          el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
-          el.set('route.query', {});
-          expect(window.location.search).to.equal('');
-        });
-
+describe('<akc-location>', function() {
+  this.timeout(0); //TMP -----------------------------------------------------------------
+  var originalLocation;
+  beforeEach( function() {
+    originalLocation = window.location.href;
+  });
+  afterEach(function() {
+    window.history.replaceState({}, '', originalLocation);
+  });
+  it('instantiates itself', function() {
+    var el = fixture('basic');
+    expect(el.constructor.name).to.equal('AkcLocation');
+  });
+  describe('basic tests', function() {
+    var el;
+    beforeEach(function() {
+      el=fixture('basic');
+    });
+    it('expect route to be exposed', function(done) {
+      afterNextRender(this, function() {
+        expect(el.route).to.be.ok;
+        expect(el.route.active).to.be.true;
+        done();
       });
     });
+    it('expect route to path to reflect path', function(done) {
+      afterNextRender(this, function() {
+        expect(el.route.path).to.equal(window.location.pathname);
+        done();
+      });
+    });
+    it('expect search string changes to reflect in route', function() {
+      setLocation(window.location.pathname + '?date=20160101&staff=2');
+      expect(el.route.query).to.deep.equal({date: '20160101', staff: '2'});
+    });
+    it('reflect changes to route path to url', function() {
+      el.set('route.path', '/reports/bydate/20161231');
+      expect(window.location.pathname).to.equal('/reports/bydate/20161231');
+    });
+    it('reflect query string changes to route.query', function() {
+      el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
+      expect(window.location.search).to.equal('?firstname=Joe&lastname=Bloggs');
+    });
+    it('seting query to null object in route should clear qhery string', function() {
+      el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
+      el.set('route.query', {});
+      expect(window.location.search).to.equal('');
+    });
 
-    </script>
+  });
+});
+</script>
   </body>
 </html>

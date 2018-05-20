@@ -1,4 +1,4 @@
-<!--
+/**
 @license
     Copyright (c) 2016 Alan Chandler, all rights reserved
 
@@ -20,55 +20,43 @@
     LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
     OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
--->
+*/
 
-<link rel="import" href="../../polymer/polymer.html">
-<link rel="import" href="../akc-route.html">
-
-<dom-module id="test-route-app">
-  <template>
-    <akc-route
-      id="route1"
-      in-route="{{route}}"
-      match="[[match]]"
-      out-route="{{subRoute}}"></akc-route>
-    <akc-route
-      id="route2"
-      in-route="{{subRoute}}"
-      if-matched="[[ifMatch]]"
-      match="/:page"
-      out-route="{{subsubRoute}}"></akc-route>
-    <akc-route
-      id="route3"
-      in-route="{{subsubRoute}}"
-      match="/:date"
-      out-route="{{subsubsubRoute}}"></akc-route>
-  </template>
-  <script>
-    Polymer({
-      is: 'test-route-app',
-      properties: {
-        route: {
-          type: Object
-        },
-        subRoute: {
-          type: Object
-        },
-        subsubRoute: {
-          type: Object
-        },
-        subsubsubRoute: {
-          type: Object
-        },
-        match: {
-          type: String,
-          value: '/:page'
-        },
-        ifMatch: {
-          type: String,
-          value: ''
-        }
+import '../akc-route.js';
+import {PolymerElement, html} from '@polymer/polymer/polymer-element.js';
+export  class TestRouteApp extends PolymerElement {
+  static get template() {
+   return html`
+    <akc-route id="route1" in-route="{{route}}" match="[[match]]" out-route="{{subRoute}}"></akc-route>
+    <akc-route id="route2" in-route="{{subRoute}}" if-matched="[[ifMatch]]" match="/:page" out-route="{{subsubRoute}}"></akc-route>
+    <akc-route id="route3" in-route="{{subsubRoute}}" match="/:date" out-route="{{subsubsubRoute}}"></akc-route>
+`
+  }
+  static get is() { return 'test-route-app';}
+  static get properties() {
+    return {
+      route: {
+        type: Object
+      },
+      subRoute: {
+        type: Object
+      },
+      subsubRoute: {
+        type: Object
+      },
+      subsubsubRoute: {
+        type: Object
+      },
+      match: {
+        type: String,
+        value: '/:page'
+      },
+      ifMatch: {
+        type: String,
+        value: ''
       }
-    });
-  </script>
-</dom-module>
+    }
+  }
+}
+customElements.define(TestRouteApp.is, TestRouteApp);
+

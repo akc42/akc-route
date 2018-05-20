@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <title>akc-route demo</title>
-  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-  <link rel="import" href="../../polymer/polymer.html">
-  <link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
-  <link rel="import" href="../../iron-selector/iron-selector.html">
-  <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
-  <link rel="import" href="../../iron-icons/iron-icons.html">
+  <script src="../../@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>
+  <script type="module" src="../../@polymer/polymer/polymer-legacy.js"></script>
+  <script type="module" src="../../@polymer/iron-flex-layout/iron-flex-layout.js"></script>
+  <script type="module" src="../../@polymer/iron-selector/iron-selector.js"></script>
+  <script type="module" src="../../@polymer/paper-icon-button/paper-icon-button.js"></script>
+  <script type="module" src="../../@polymer/iron-icons/iron-icons.js"></script>
 
-  <link rel="import" href="../akc-location.html">
-  <link rel="import" href="../akc-route.html">
+  <script type="module" src="../akc-location.js"></script>
+  <script type="module" src="../akc-route.js"></script>
   <style >
     body {
       margin: 0;
@@ -52,31 +52,38 @@
     <div class$="[[_classify(active)]]"></div>
     <div><content></content></div>
   </template>
-  <script>
-    Polymer({
-      is: 'active-display',
-      properties: {
-        active: {
-          type: Boolean,
-          value: false
-        },
-        indicate: {
-          type: Boolean,
-          value: false
-        }
-      },
-       _classify: function(active) {
-        if (active) {
-          if (this.indicate) {
-            return 'marker indicate';
-          }
-          return 'marker active';
-        }
-        return 'marker inactive';
+  <script type="module">
+import '../../@polymer/polymer/polymer-legacy.js';
+import '../../@polymer/iron-flex-layout/iron-flex-layout.js';
+import '../../@polymer/iron-selector/iron-selector.js';
+import '../../@polymer/iron-icons/iron-icons.js';
+import '../akc-location.js';
+import '../akc-route.js';
+import { Polymer } from '../../@polymer/polymer/lib/legacy/polymer-fn.js';
+Polymer({
+  is: 'active-display',
+  properties: {
+    active: {
+      type: Boolean,
+      value: false
+    },
+    indicate: {
+      type: Boolean,
+      value: false
+    }
+  },
+   _classify: function(active) {
+    if (active) {
+      if (this.indicate) {
+        return 'marker indicate';
       }
+      return 'marker active';
+    }
+    return 'marker inactive';
+  }
 
-    });
-  </script>
+});
+</script>
 </dom-module>
 
   <dom-module id="select-indicator">
@@ -92,33 +99,40 @@
       <active-display active="[[active]]" indicate>[[name]]</active-display>
       <div><content></content></div>
     </template>
-    <script>
-    Polymer({
-      is: 'select-indicator',
-      properties: {
-        selected: {
-          type: Object,
-          observer: '_selectChanged'
-        },
-        active: {
-          type: Boolean,
-          value: false,
-          notify:true
-        },
-        name: {
-          type: String,
-          value: ''
-        }
-      },
-      _selectChanged(selected) {
-        if(selected === this) {
-          this.active = true;
-        } else {
-          this.active = false;
-        }
-      }
-    });
-    </script>
+    <script type="module">
+import '../../@polymer/polymer/polymer-legacy.js';
+import '../../@polymer/iron-flex-layout/iron-flex-layout.js';
+import '../../@polymer/iron-selector/iron-selector.js';
+import '../../@polymer/iron-icons/iron-icons.js';
+import '../akc-location.js';
+import '../akc-route.js';
+import { Polymer } from '../../@polymer/polymer/lib/legacy/polymer-fn.js';
+Polymer({
+  is: 'select-indicator',
+  properties: {
+    selected: {
+      type: Object,
+      observer: '_selectChanged'
+    },
+    active: {
+      type: Boolean,
+      value: false,
+      notify:true
+    },
+    name: {
+      type: String,
+      value: ''
+    }
+  },
+  _selectChanged(selected) {
+    if(selected === this) {
+      this.active = true;
+    } else {
+      this.active = false;
+    }
+  }
+});
+</script>
 </dom-module>
 
 
@@ -246,142 +260,147 @@
       </div>
     </template>
   </dom-module>
-  <script>
-    document.addEventListener('WebComponentsReady', function() {
-      Polymer({
-        is: 'test-elem',
-        properties: {
-          route: {
-            type: Object
-          },
-          subRoute: {
-            type: Object
-          },
-          cidpidRoute: {
-            type: Object
-          },
-          apptRoute: {
-            type: Object
-          },
-          dayRoute: {
-            type: Object
-          },
-          reportsRoute: {
-            type: Object
-          },
-          dateRoute: {
-            type: Object
-          },
-          mainPage: {
-            type: String,
-            value: '',
-            readOnly: true
-          },
-          apptPage: {
-            type: String,
-            value: '',
-            readOnly: true
-          },
-          reportPage: {
-            type: String,
-            value: '',
-            readOnly: true
-          },
-          clinic: {
-            type: Number
-          },
-          mainSelect: {
-            type: Object,
-            value: function(){return {};}
-          },
-          apptSelect: {
-            type: Object,
-            value: function(){return {};}
-          },
-          clinicSelect: {
-            type: Object,
-            value: function(){return {};}
-          },
-          reportSelect: {
-            type: Object,
-            value: function(){return {};}
-          },
-          lastIndex: {
-            type: Number,
-            value: 0
-          },
-          urls: {
-            type: Array,
-            value: function() {
-              return [
-                '/',
-                '/appointments',
-                '/appointments/2/3',
-                '/appointments/2/3/day/20161001',
-                '/reports',
-                '/reports/results',
-                '/reports',
-                '/reports/bydate/20150101',
-                '/appointments'
-              ];
-            }
-          }
-        },
-        observers: [
-        '_subRoutePageChanged(subRoute.params.page)',
-        '_apptRoutePageChanged(apptRoute.params.page)',
-        '_reportsRoutePageChanged(reportsRoute.params.page)',
-        '_appointmentsClinicActiveChanged(subRoute.params.page, cidpidRoute.active)'
-        ],
-        listeners: {
-          'change.tap': '_changeURL'
-        },
-        attached: function() {
-          this.originalLocation = window.location.href;
-          this.switchPath(this.urls[this.lastIndex]);
-        },
-        detached: function() {
-            window.history.pushState({}, null, this.originalLocation);
-        },
-        switchPath: function(path) {
-          window.history.pushState({}, null, path);
-          window.dispatchEvent(new CustomEvent('location-changed'));
-        },
-        _subRoutePageChanged: function(page) {
-          this._setMainPage(page || 'home');
-        },
-        _apptRoutePageChanged: function(page) {
-          this._setApptPage(page || 'month');
-        },
-        _reportsRoutePageChanged: function(page) {
-          this._setReportPage(page || 'home');
-        },
-        _appointmentsClinicActiveChanged: function(page,acid) {
-          var cid = 1
-          if (page === 'appointments' && !acid) {
-          //We got an appointment url without cid pid
-            if (this.cidpidRoute.params && this.cidpidRoute.params.cid) {
-              //try and use any value that might have been there from before - better ergonomics
-              cid = this.cidpidRoute.params.cid
-            }
-            this.async(function() {
-              this.set('cidpidRoute.params', {cid: cid, pid: 0});
-            });
-          } else if (page !== 'appointments') {
-            this.set('cidpidRoute.params.pid', 0); //ensure we clean up if leave booking
-          }
-        },
-        _changeURL: function() {
-
-          this.lastIndex++;
-          if(this.lastIndex >= this.urls.length) {
-            this.lastIndex = 0;
-          }
-          this.switchPath(this.urls[this.lastIndex]);
-        }
+  <script type="module">
+import '../../@polymer/polymer/polymer-legacy.js';
+import '../../@polymer/iron-flex-layout/iron-flex-layout.js';
+import '../../@polymer/iron-selector/iron-selector.js';
+import '../../@polymer/iron-icons/iron-icons.js';
+import '../akc-location.js';
+import '../akc-route.js';
+import { Polymer } from '../../@polymer/polymer/lib/legacy/polymer-fn.js';
+Polymer({
+  is: 'test-elem',
+  properties: {
+    route: {
+      type: Object
+    },
+    subRoute: {
+      type: Object
+    },
+    cidpidRoute: {
+      type: Object
+    },
+    apptRoute: {
+      type: Object
+    },
+    dayRoute: {
+      type: Object
+    },
+    reportsRoute: {
+      type: Object
+    },
+    dateRoute: {
+      type: Object
+    },
+    mainPage: {
+      type: String,
+      value: '',
+      readOnly: true
+    },
+    apptPage: {
+      type: String,
+      value: '',
+      readOnly: true
+    },
+    reportPage: {
+      type: String,
+      value: '',
+      readOnly: true
+    },
+    clinic: {
+      type: Number
+    },
+    mainSelect: {
+      type: Object,
+      value: function(){return {};}
+    },
+    apptSelect: {
+      type: Object,
+      value: function(){return {};}
+    },
+    clinicSelect: {
+      type: Object,
+      value: function(){return {};}
+    },
+    reportSelect: {
+      type: Object,
+      value: function(){return {};}
+    },
+    lastIndex: {
+      type: Number,
+      value: 0
+    },
+    urls: {
+      type: Array,
+      value: function() {
+        return [
+          '/',
+          '/appointments',
+          '/appointments/2/3',
+          '/appointments/2/3/day/20161001',
+          '/reports',
+          '/reports/results',
+          '/reports',
+          '/reports/bydate/20150101',
+          '/appointments'
+        ];
+      }
+    }
+  },
+  observers: [
+  '_subRoutePageChanged(subRoute.params.page)',
+  '_apptRoutePageChanged(apptRoute.params.page)',
+  '_reportsRoutePageChanged(reportsRoute.params.page)',
+  '_appointmentsClinicActiveChanged(subRoute.params.page, cidpidRoute.active)'
+  ],
+  listeners: {
+    'change.tap': '_changeURL'
+  },
+  attached: function() {
+    this.originalLocation = window.location.href;
+    this.switchPath(this.urls[this.lastIndex]);
+  },
+  detached: function() {
+      window.history.pushState({}, null, this.originalLocation);
+  },
+  switchPath: function(path) {
+    window.history.pushState({}, null, path);
+    window.dispatchEvent(new CustomEvent('location-changed'));
+  },
+  _subRoutePageChanged: function(page) {
+    this._setMainPage(page || 'home');
+  },
+  _apptRoutePageChanged: function(page) {
+    this._setApptPage(page || 'month');
+  },
+  _reportsRoutePageChanged: function(page) {
+    this._setReportPage(page || 'home');
+  },
+  _appointmentsClinicActiveChanged: function(page,acid) {
+    var cid = 1
+    if (page === 'appointments' && !acid) {
+    //We got an appointment url without cid pid
+      if (this.cidpidRoute.params && this.cidpidRoute.params.cid) {
+        //try and use any value that might have been there from before - better ergonomics
+        cid = this.cidpidRoute.params.cid
+      }
+      this.async(function() {
+        this.set('cidpidRoute.params', {cid: cid, pid: 0});
       });
-    });
-  </script>
+    } else if (page !== 'appointments') {
+      this.set('cidpidRoute.params.pid', 0); //ensure we clean up if leave booking
+    }
+  },
+  _changeURL: function() {
+
+    this.lastIndex++;
+    if(this.lastIndex >= this.urls.length) {
+      this.lastIndex = 0;
+    }
+    this.switchPath(this.urls[this.lastIndex]);
+  }
+});
+</script>
   <test-elem></test-elem>
 
 

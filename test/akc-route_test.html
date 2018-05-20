@@ -27,11 +27,11 @@
     <title>akc-route test</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-    <script src="../../web-component-tester/browser.js"></script>
+    <script module="@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../node_modules/wct-browser-legacy/browser.js"></script>
 
-    <link rel="import" href="../akc-route.html">
-    <link rel="import" href="test-route-app.html">
+    <script type="module" src="../akc-route.js"></script>
+    <script type="module" src="./test-route-app.js"></script>
   </head>
   <body>
 
@@ -46,179 +46,181 @@
       </template>
     </test-fixture>
 
-    <script>
-      describe('akc-route', function() {
-        describe('basic functionality', function() {
-          var el
-          beforeEach(function() {
-            el = fixture('basic');
-            el.inRoute = {};
-          })
-          it('instantiates itself', function() {
-            expect(el.constructor.name).to.equal('akcRoute');
-          });
-          it('match a simple route', function() {
-            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
-            expect(el.outRoute).to.deep.equal(
-              {path: '/', active: true, params: {page: 'reports'}, query: {}});
-          });
-          it('match home route', function() {
-            el.inRoute = {path: '/', active: true, params: {}, query: {}};
-             expect(el.outRoute).to.deep.equal(
-              {path: '', active: true, params: {page: ''}, query: {}});
-          });
-          it('passes remainder of path after match to out-route', function() {
-            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            expect(el.outRoute.path).to.equal('/bydate');
-          });
-          it('out route not active unless in-route active', function() {
-            el.inRoute = {path: '/reports', active: false, params: {}, query: {}};
-            expect(el.outRoute.active).to.be.false;
-          });
-          it('out route path has no "/" if match has trailing "/"', function() {
-            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
-            el.match = '/:page/';
-            expect(el.outRoute.path).to.equal('');
-          });
-          it('in route with empty string for path will not match', function() {
-            el.inRoute = {path: '', active: true, params: {}, query: {}};
-            expect(el.outRoute.active).to.be.false;
-          });
-          it('if matched parameter is all digits, params provides a number', function() {
-            el.inRoute = {path: '/20160101/staff', active: true, params: {}, query: {}};
-            expect(el.outRoute.params.page).to.equal(20160101);
-            expect(el.outRoute.params.page).to.not.equal('20160101');
-            el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
-            expect(el.outRoute.params.page).to.equal('staff');
-          });
-          it('if matched parameter is all digits with a leading minus, params provides a number', function() {
-            el.inRoute = {path: '/-500/staff', active: true, params: {}, query: {}};
-            expect(el.outRoute.params.page).to.equal(-500);
-            expect(el.outRoute.params.page).to.not.equal('-500');
-          });
-          it('if matched parameter is all digits and non leading minus, params provides a string', function() {
-            el.inRoute = {path: '/5-01/staff', active: true, params: {}, query: {}};
-            expect(el.outRoute.params.page).to.not.equal(501);
-            expect(el.outRoute.params.page).to.not.equal(-501);
-            expect(el.outRoute.params.page).to.equal('5-01');
-            el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
-            expect(el.outRoute.params.page).to.equal('staff');            
-          });
-          it('query parameters passed downwards', function() {
-            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
-            el.set('inRoute.query', {date: '20160101'});
-            expect(el.outRoute.query).to.eql({date: '20160101'});
-          });
-          it('query parameters passed upwards provided outRoute is active', function() {
-            el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
-            el.set('outRoute.query', {date: '20161231'});
-            expect(el.inRoute.query).to.eql({date: '20161231'})
-          });
-          it('query parameters not passed upwards if outRoute Not Active', function() {
-            el.inRoute = {path: '', active: true, params: {}, query: {}};
-            el.set('outRoute.query', {date: '20161231'});
-            expect(el.inRoute.query).to.eql({})
-          });
-          it('changes in parameters effect in-route path', function() {
-            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            el.set('outRoute.params', {page: 'query'});
-            expect(el.inRoute.path).to.equal('/query/bydate');
-          });
-          it('changes to a single parameter effect in-route path', function() {
-            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            el.set('outRoute.params.page', 'query');
-            expect(el.inRoute.path).to.equal('/query/bydate');
-          });
-          it('first optional parameters to \'\' will result in inRoute path of /', function() {
-            el.match = '/:page/:sub'
-            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            el.set('outRoute.params.page', '');
-            expect(el.inRoute.path).to.equal('/');
-          });
-          it('early optional parameters kept in patth if latter empty', function() {
-            el.match = '/:page/:sub'
-            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            el.set('outRoute.params.sub', '');
-            expect(el.inRoute.path).to.equal('/reports');
-          });
-          it('first optional paramters to null will result in inRoute path of /', function() {
-            el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            el.set('outRoute.params.page', null);
-            expect(el.inRoute.path).to.equal('/');
-          });
-        });
-        describe('chaining functionality', function() {
-          var el;
-          beforeEach(function() {
-            el = fixture('chained');
-            el.ifMatch = '';
-            el.route = {};
-          });
-          it('not match if ifMatcher criteria not met', function() {
-            el.ifMatch = 'page:appointment'
-            el.match = '/:page'
-            el.route = {path: '/reports/bydate', active: true, params: {}, query: {}};
-            expect(el.subsubRoute.active).to.be.false;
-          });
-          it('changes to lower paths can propagate up provided lower is active', function() {
-            el.match = '/reports';
-            el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
-            el.set('subsubRoute.path', '/20161231');
-            expect(el.route.path).to.equal('/reports/bydate/20161231');
-          });
-          it('changes to lower paths don\'t propagate up if lower not active', function() {
-            el.match = '/reports';
-            el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
-            el.$.route2.match = '/query';
-            el.set('subsubRoute.path', '/20161231');
-            expect(el.route.path).to.equal('/reports/bydate/20160101');
-          });
-          it('zero length parameter change limits actuve', function() {
-            el.match = '/:page';
-            el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
-            el.set('subRoute.params', {page: ''});
-            expect(el.route.path).to.equal('/');
-          });
-          it('reflect parameter changes that activate out-route', function() {
-            el.match = '/:userid/:classid'
-            el.route = {path: '/4', active: true, params: {}, query: {}};
-            expect(el.subsubRoute.active).to.be.false;
-            el.set('subRoute.params', {userid: 4, classid: 5});
-            expect(el.subsubRoute.active).to.be.true;
-          });
-          it('reflect parameter change with value 0', function() {
-            el.match = '/:page';
-            el.route = {path: '/appointments', active: true,  params: {}, query: {}};
-            expect(el.subsubRoute.params.page).to.equal('');
-            el.set('subsubRoute.params.page', 0);
-            expect(el.subsubRoute.params.page).to.equal(0);
-          });
-          it('home route should not allow downward propagation of active', function() {
-            el.match = '/:page';
-            el.ifMatch = 'page:appintments'
-            el.route = {path: '/appointments/1', active: true, params: {}, query: {}};
-            el.route = {path: '/', active: true, params: {}, query: {}};
-            expect(el.subsubRoute.active).to.be.false;
-          });
-          it('we can force a change througn non active route with query parameters upwards if we set a whole new route', function() {
-            el.match = '/:page';
-            el.ifMatch = 'page:bydate'
-            el.route = {path: '/bydate/20160101', active: true, params:{}, query: {}};
-            el.subRoute = {path: '/missd', active: true, params: {page: 'query'}, query: {return: '/bydate/20160101'}};
-            expect(el.route.query).to.deep.equal({return: '/bydate/20160101'});
-            expect(el.route.path).to.equal('/query/missd'); 
-          }); 
-          it('should not add non active path to new derived path', function() {
-            el.match = '/:page';
-            el.$.route2.match = '/:cid/:pid'
-            el.route = {path: '/appointments/1/0/20160101', active: true, params: {}, query: {}};
-            el.route = {path: '/appointments', active: true, params: {}, query: {}};
-            el.set('subsubRoute.params', {cid: 1, pid: 0});
-            expect(el.route.path).to.equal('/appointments/1/0');
-          });
-        });
+    <script type="module">
+import '../akc-route.js';
+import './test-route-app.js';
+describe('akc-route', function() {
+  describe('basic functionality', function() {
+    var el
+    beforeEach(function() {
+      el = fixture('basic');
+      el.inRoute = {};
+    })
+    it('instantiates itself', function() {
+      expect(el.constructor.name).to.equal('AkcRoute');
+    });
+    it('match a simple route', function() {
+      el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+      expect(el.outRoute).to.deep.equal(
+        {path: '/', active: true, params: {page: 'reports'}, query: {}});
+    });
+    it('match home route', function() {
+      el.inRoute = {path: '/', active: true, params: {}, query: {}};
+       expect(el.outRoute).to.deep.equal(
+        {path: '', active: true, params: {page: ''}, query: {}});
+    });
+    it('passes remainder of path after match to out-route', function() {
+      el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      expect(el.outRoute.path).to.equal('/bydate');
+    });
+    it('out route not active unless in-route active', function() {
+      el.inRoute = {path: '/reports', active: false, params: {}, query: {}};
+      expect(el.outRoute.active).to.be.false;
+    });
+    it('out route path has no "/" if match has trailing "/"', function() {
+      el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+      el.match = '/:page/';
+      expect(el.outRoute.path).to.equal('');
+    });
+    it('in route with empty string for path will not match', function() {
+      el.inRoute = {path: '', active: true, params: {}, query: {}};
+      expect(el.outRoute.active).to.be.false;
+    });
+    it('if matched parameter is all digits, params provides a number', function() {
+      el.inRoute = {path: '/20160101/staff', active: true, params: {}, query: {}};
+      expect(el.outRoute.params.page).to.equal(20160101);
+      expect(el.outRoute.params.page).to.not.equal('20160101');
+      el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
+      expect(el.outRoute.params.page).to.equal('staff');
+    });
+    it('if matched parameter is all digits with a leading minus, params provides a number', function() {
+      el.inRoute = {path: '/-500/staff', active: true, params: {}, query: {}};
+      expect(el.outRoute.params.page).to.equal(-500);
+      expect(el.outRoute.params.page).to.not.equal('-500');
+    });
+    it('if matched parameter is all digits and non leading minus, params provides a string', function() {
+      el.inRoute = {path: '/5-01/staff', active: true, params: {}, query: {}};
+      expect(el.outRoute.params.page).to.not.equal(501);
+      expect(el.outRoute.params.page).to.not.equal(-501);
+      expect(el.outRoute.params.page).to.equal('5-01');
+      el.inRoute = {path: '/staff', active: true, params: {}, query: {}};
+      expect(el.outRoute.params.page).to.equal('staff');            
+    });
+    it('query parameters passed downwards', function() {
+      el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+      el.set('inRoute.query', {date: '20160101'});
+      expect(el.outRoute.query).to.eql({date: '20160101'});
+    });
+    it('query parameters passed upwards provided outRoute is active', function() {
+      el.inRoute = {path: '/reports', active: true, params: {}, query: {}};
+      el.set('outRoute.query', {date: '20161231'});
+      expect(el.inRoute.query).to.eql({date: '20161231'})
+    });
+    it('query parameters not passed upwards if outRoute Not Active', function() {
+      el.inRoute = {path: '', active: true, params: {}, query: {}};
+      el.set('outRoute.query', {date: '20161231'});
+      expect(el.inRoute.query).to.eql({})
+    });
+    it('changes in parameters effect in-route path', function() {
+      el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      el.set('outRoute.params', {page: 'query'});
+      expect(el.inRoute.path).to.equal('/query/bydate');
+    });
+    it('changes to a single parameter effect in-route path', function() {
+      el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      el.set('outRoute.params.page', 'query');
+      expect(el.inRoute.path).to.equal('/query/bydate');
+    });
+    it('first optional parameters to \'\' will result in inRoute path of /', function() {
+      el.match = '/:page/:sub'
+      el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      el.set('outRoute.params.page', '');
+      expect(el.inRoute.path).to.equal('/');
+    });
+    it('early optional parameters kept in patth if latter empty', function() {
+      el.match = '/:page/:sub'
+      el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      el.set('outRoute.params.sub', '');
+      expect(el.inRoute.path).to.equal('/reports');
+    });
+    it('first optional paramters to null will result in inRoute path of /', function() {
+      el.inRoute = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      el.set('outRoute.params.page', null);
+      expect(el.inRoute.path).to.equal('/');
+    });
+  });
+  describe('chaining functionality', function() {
+    var el;
+    beforeEach(function() {
+      el = fixture('chained');
+      el.ifMatch = '';
+      el.route = {};
+    });
+    it('not match if ifMatcher criteria not met', function() {
+      el.ifMatch = 'page:appointment'
+      el.match = '/:page'
+      el.route = {path: '/reports/bydate', active: true, params: {}, query: {}};
+      expect(el.subsubRoute.active).to.be.false;
+    });
+    it('changes to lower paths can propagate up provided lower is active', function() {
+      el.match = '/reports';
+      el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
+      el.set('subsubRoute.path', '/20161231');
+      expect(el.route.path).to.equal('/reports/bydate/20161231');
+    });
+    it('changes to lower paths don\'t propagate up if lower not active', function() {
+      el.match = '/reports';
+      el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
+      el.$.route2.match = '/query';
+      el.set('subsubRoute.path', '/20161231');
+      expect(el.route.path).to.equal('/reports/bydate/20160101');
+    });
+    it('zero length parameter change limits actuve', function() {
+      el.match = '/:page';
+      el.route = {path: '/reports/bydate/20160101', active: true, params: {}, query: {}};
+      el.set('subRoute.params', {page: ''});
+      expect(el.route.path).to.equal('/');
+    });
+    it('reflect parameter changes that activate out-route', function() {
+      el.match = '/:userid/:classid'
+      el.route = {path: '/4', active: true, params: {}, query: {}};
+      expect(el.subsubRoute.active).to.be.false;
+      el.set('subRoute.params', {userid: 4, classid: 5});
+      expect(el.subsubRoute.active).to.be.true;
+    });
+    it('reflect parameter change with value 0', function() {
+      el.match = '/:page';
+      el.route = {path: '/appointments', active: true,  params: {}, query: {}};
+      expect(el.subsubRoute.params.page).to.equal('');
+      el.set('subsubRoute.params.page', 0);
+      expect(el.subsubRoute.params.page).to.equal(0);
+    });
+    it('home route should not allow downward propagation of active', function() {
+      el.match = '/:page';
+      el.ifMatch = 'page:appintments'
+      el.route = {path: '/appointments/1', active: true, params: {}, query: {}};
+      el.route = {path: '/', active: true, params: {}, query: {}};
+      expect(el.subsubRoute.active).to.be.false;
+    });
+    it('we can force a change througn non active route with query parameters upwards if we set a whole new route', function() {
+      el.match = '/:page';
+      el.ifMatch = 'page:bydate'
+      el.route = {path: '/bydate/20160101', active: true, params:{}, query: {}};
+      el.subRoute = {path: '/missd', active: true, params: {page: 'query'}, query: {return: '/bydate/20160101'}};
+      expect(el.route.query).to.deep.equal({return: '/bydate/20160101'});
+      expect(el.route.path).to.equal('/query/missd'); 
+    }); 
+    it('should not add non active path to new derived path', function() {
+      el.match = '/:page';
+      el.$.route2.match = '/:cid/:pid'
+      el.route = {path: '/appointments/1/0/20160101', active: true, params: {}, query: {}};
+      el.route = {path: '/appointments', active: true, params: {}, query: {}};
+      el.set('subsubRoute.params', {cid: 1, pid: 0});
+      expect(el.route.path).to.equal('/appointments/1/0');
+    });
+  });
 
-      });
-    </script>
+});
+</script>
   </body>
 </html>
