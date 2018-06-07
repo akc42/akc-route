@@ -1,5 +1,7 @@
 # \<akc-route\>
 
+**NOTE This version of the router is designed to work with LitElement,  Since the previous version using Polymer 3 is still very much in use and has been published to npm as @AKC42/akc-route a formal release and publishing is unlikely to happen for a while if at all (as this version will be integrated directly into my application as though the two elements were bespoke for the application).  I provide it here so it may be forked and used by anyone interested.** 
+
 A distributed router inspired by PolymerElements/app-route
 
 ## Introduction
