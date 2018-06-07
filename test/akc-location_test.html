@@ -29,9 +29,6 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
     <script src="../node_modules/wct-browser-legacy/browser.js"></script>
-
-    <script type="module" src="../akc-location.js"></script>
-
   </head>
   <body>
 
@@ -49,7 +46,7 @@
 
     <script type="module">
 import '../akc-location.js';
-import { afterNextRender } from '@polymer/polymer/lib/utils/render-status.js';
+
 function setLocation(url) {
   window.history.pushState({}, '', url);
   window.dispatchEvent(new CustomEvent('location-changed'));
@@ -57,9 +54,14 @@ function setLocation(url) {
 
 describe('<akc-location>', function() {
   this.timeout(0); //TMP -----------------------------------------------------------------
-  var originalLocation;
+  var originalLocation, route;
+  function routeChanged(e) {
+    route = e.detail;
+  }
+
   beforeEach( function() {
     originalLocation = window.location.href;
+    route = {};
   });
   afterEach(function() {
     window.history.replaceState({}, '', originalLocation);
@@ -70,37 +72,58 @@ describe('<akc-location>', function() {
   });
   describe('basic tests', function() {
     var el;
-    beforeEach(function() {
-      el=fixture('basic');
+    beforeEach(async function() {
+      el = fixture('basic');
+      el.addEventListener('route-changed', routeChanged);
+      await el.renderComplete;
     });
-    it('expect route to be exposed', function(done) {
-      afterNextRender(this, function() {
-        expect(el.route).to.be.ok;
-        expect(el.route.active).to.be.true;
-        done();
-      });
+    afterEach(function() {
+      el.removeEventListener('route-changed', routeChanged);
     });
-    it('expect route to path to reflect path', function(done) {
-      afterNextRender(this, function() {
-        expect(el.route.path).to.equal(window.location.pathname);
-        done();
-      });
+    it('expect route to be exposed', function() {
+      expect(route).to.be.ok;
+      expect(route.active).to.be.true;
     });
-    it('expect search string changes to reflect in route', function() {
+    it('expect route to path to reflect path', function() {
+      expect(route.path).to.equal(window.location.pathname);
+    });
+    it('expect search string changes to reflect in route', async function() {
       setLocation(window.location.pathname + '?date=20160101&staff=2');
-      expect(el.route.query).to.deep.equal({date: '20160101', staff: '2'});
+      await el.renderComplete;
+      expect(route.query).to.deep.equal({date: '20160101', staff: '2'});
     });
-    it('reflect changes to route path to url', function() {
-      el.set('route.path', '/reports/bydate/20161231');
+    it('reflect changes to route path to url', async function() {
+      window.dispatchEvent(new CustomEvent('route-updated',{
+        detail: {
+          segment: 0,
+          path: '/reports/bydate/20161231'
+        }
+      }))
+      await el.renderComplete;
       expect(window.location.pathname).to.equal('/reports/bydate/20161231');
     });
-    it('reflect query string changes to route.query', function() {
-      el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
+    it('reflect query string changes to route.query', async function() {
+      window.dispatchEvent(new CustomEvent('route-updated',{
+        detail: {
+          query:{firstname: 'Joe', lastname: 'Bloggs'}
+        }
+      }))
+      await el.renderComplete;
       expect(window.location.search).to.equal('?firstname=Joe&lastname=Bloggs');
     });
-    it('seting query to null object in route should clear qhery string', function() {
-      el.set('route.query', {firstname: 'Joe', lastname: 'Bloggs'});
-      el.set('route.query', {});
+    it('setting query to null object in route should clear query string', async function() {
+      window.dispatchEvent(new CustomEvent('route-updated',{
+        detail: {
+          query:{firstname: 'Joe', lastname: 'Bloggs'}
+        }
+      }));
+      await el.renderComplete;
+      window.dispatchEvent(new CustomEvent('route-updated',{
+        detail: {
+          query:{}
+        }
+      }));
+      await el.renderComplete;
       expect(window.location.search).to.equal('');
     });
 

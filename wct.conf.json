@@ -1,0 +1,16 @@
+{
+  "expanded": true,
+  "quiet": false,
+  "suites": ["test"],
+  "plugins": {
+    "local": {
+      "browsers": ["chrome"],
+      "browserOptions": {
+        "chrome": [
+          "headless",
+          "disable-gpu"
+        ]
+      }
+    }
+  }
+}

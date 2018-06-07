@@ -38,155 +38,109 @@ this to and from a `route` object that can be passed fown a chain of such object
   from HTML and may be out of place here. Review them and
   then delete this comment!
 */
-import { PolymerElement } from '@polymer/polymer/polymer-element.js';
+import {LitElement, html} from '@polymer/lit-element';
 
-import { afterNextRender } from '@polymer/polymer/lib/utils/render-status.js';
-
-export class AkcLocation extends PolymerElement {
+export class AkcLocation extends LitElement {
 
 
   static get is() { return 'akc-location';}
   static get properties() {
     return {
-      /**
-      * the route property contains the following fields.
-      *
-      *  * `prefix` for `<akc-location>` this will always be the empty string, but further down
-      *     the chain of `<akc-route>` elements it will show the amount of url consumed so far.
-      *  * `path` shows the url path that has not yet been consumed
-      *  * `active` a boolean that indicates whether the path so far has been matched. For
-      *     `<akc-location>` this will be true once the first route has initialised
-      *  * `params` further down the `<akc-route>` chain the `out-route.params`. property will
-      *     contain an object of the matched parameters from the route. For this element it
-      *     will always contain the empty object (ie {});
-      *  * `query` will contain an object representation of the search parameters from the url.
-      *
-      *  Note - changes are atomic.  That is if the url changes, all of the above properties of
-      *  the `route` object will set before any observer on the object or one of its properties
-      *  sees a change.
-      * @type(object)
-      */
-      route: {
-        type: Object,
-        value: function() {return { path: '', active: false, params: {}, query: {}};},
-        notify: true
-      },
-      /**
-      * In many scenarios, it is convenient to treat the `hash` as a stand-in
-      * alternative to the `path`. For example, if deploying an app to a static
-      * web server (e.g., Github Pages) - where one does not have control over
-      * server-side routing - it is usually a better experience to use the hash
-      * to represent paths through one's app.
-      *
-      * When this property is set to true, the `hash` will be used in place of
-
-      * the `path` for generating a `route`.
-      * @type(boolean)
-      */
-      useHashAsPath: {
-        type: Boolean,
-        value: false
-      },
-      /**
-      * If the user was on a URL for less than `dwellTime` milliseconds, it
-      * won't be added to the browser's history, but instead will be replaced
-      * by the next entry.
-      *
-      * This is to prevent large numbers of entries from clogging up the user's
-      * browser history. Disable by setting to a negative number.
-      * @type(number)
-      */
-      dwellTime: {
-        type: Number,
-        value: 2000
-      }
-
+      useHashAsPath: Boolean,
+      dwellTime: Number,
     };
   }
-  static get observers() {
-    return [
-      '_routeChanged(route.path,route.query)'
-    ];
-  }
-  connectedCallback() {
-    super.connectedCallback();
-    this._ensureAttribute('hidden', true);
-    this.routeUpdateInProgress = false;
+  constructor() {
+    super();
+    this.useHashPath = false;
+    this.dwellTime = 2000;
+    this.routeUpdateInProgress = true;
     this.urlUpdateInProgress = false;
     this._urlChanged = this._urlChanged.bind(this);
+    this._routeUpdated = this._routeUpdated.bind(this);
     window.addEventListener('hashchange', this._urlChanged);
     window.addEventListener('popstate', this._urlChanged);
     window.addEventListener('location-changed',this._urlChanged);
-     afterNextRender(this, function() {
+    window.addEventListener('route-updated', this._routeUpdated);
+    this.renderComplete.then(() => {
       this._urlChanged(); //set initial conditions. but after siblings are ready.
       this._lastChangedAt = window.performance.now() - (this.dwellTime - 200);
     });
   }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    window.removeEventListener('location-changed',this._urlChanged);
-    window.removeEventListener('popstate', this._urlChanged);
-    window.removeEventListener('hashchange', this._urlChanged);
+  _render() {
+    return html``;
   }
-  _urlChanged() {
-    if (!this.urlUpdateInProgress) {
-      var hash = window.decodeURIComponent(window.location.hash.substring(1));
-      var path = window.decodeURIComponent(window.location.pathname);
-      var query = this._decodeParams(window.location.search.substring(1));
-      if (this.route &&
-        this.route.path === (this.useHashAsPath ? hash : path) &&
-        this.route.query === query) {
-        return;
-      }
-      this._lastChangeAt = window.performance.now()
-      this.routeUpdateInProgress = true
-      this.route = {
-        path: (this.useHashAsPath ? hash : path),
-        params: {},
-        query: query,
-        active: true
-      };
-      this.routeUpdateInProgress = false;
-    }
-  }
-  _routeChanged(path, query) {
-    if (this.routeUpdateInProgress === undefined) {
-      return; //don't want to do anything until we are established
-    }
-    if (!this.routeUpdateInProgress) {
-      this.urlUpdateInProgress = true;
-      var newUrl;
-      if (this.useHashAsPath) {
-        newUrl = window.location.pathname
-      } else {
-        newUrl = window.encodeURI(path).replace(/\#/g, '%23').replace(/\?/g, '%3F');
-      }
-      if (query && Object.keys(query).length > 0) {
-        newUrl += '?' + this._encodeParams(query)
-        .replace(/%3F/g, '?')
-        .replace(/%2F/g, '/')
-        .replace(/'/g, '%27')
-        .replace(/\#/g, '%23')
-        ;
 
-      }
-      if (this.useHashAsPath) {
-        newUrl += '#' + window.encodeURI(path);
+  _urlChanged() {
+    var hash = window.decodeURIComponent(window.location.hash.substring(1));
+    var path = window.decodeURIComponent(window.location.pathname);
+    var query = this._decodeParams(window.location.search.substring(1));
+    if (this.route &&
+      this.route.path === (this.useHashAsPath ? hash : path) &&
+      this.route.query === query) {
+      return;
+    }
+    this._lastChangeAt = window.performance.now()
+    this.routeUpdateInProgress = true
+    this.route = {
+      path: (this.useHashAsPath ? hash : path),
+      segment: 0,
+      params: {},
+      query: query,
+      active: true
+    };
+    this.dispatchEvent(new CustomEvent('route-changed',{detail: Object.assign({},this.route)}))
+  }
+  async _routeUpdated(e) {
+    var detail = e.detail;
+    await this.renderComplete;  //force a wait to prevent loop as a result of chnage
+    var newPath = this.route.path;
+    if(e.detail.path !== undefined) {
+      if (Number.isInteger(e.detail.segment)) {
+        var newPaths = e.detail.path.split('/');
+        if (newPaths[0] === '') newPaths.shift(); //ignore blank if first char of path is '/'
+        var segments = this.route.path.split('/');
+        if(segments.length > e.detail.segment) segments.length = e.detail.segment + 1; //truncate to just before path
+        segments = segments.concat(newPaths);
+        newPath = segments.join('/');
       } else {
-        newUrl += window.location.hash
+        throw new Error('Invalid segment info in route-updated event');
       }
-      // Tidy up if base tag in header
-      newUrl = new URL(newUrl, window.location.protocol + '//' + window.location.host).href
-      if (newUrl !== window.location.href) { //has it changed?
-        var now = window.performance.now();
-        if (this._lastChangedAt + this.dwellTime > now) {
-          window.history.replaceState({}, '', newUrl);
-        } else {
-          window.history.pushState({}, '', newUrl);
-        }
-        this._lastChangedAt = now;
+    }
+    var query = Object.assign({}, this.route.query);
+    if (e.detail.query !== undefined) {
+      query = e.detail.query;
+    }
+    var newUrl;
+    if (this.useHashAsPath) {
+      newUrl = window.location.pathname;
+    } else {
+      newUrl = window.encodeURI(newPath).replace(/\#/g, '%23').replace(/\?/g, '%3F');
+    }
+    if (Object.keys(query).length > 0) {
+      newUrl += '?' + this._encodeParams(query)
+      .replace(/%3F/g, '?')
+      .replace(/%2F/g, '/')
+      .replace(/'/g, '%27')
+      .replace(/\#/g, '%23')
+      ;
+
+    }
+    if (this.useHashAsPath) {
+      newUrl += '#' + window.encodeURI(newPath);
+    } else {
+      newUrl += window.location.hash;
+    }
+    // Tidy up if base tag in header
+    newUrl = new URL(newUrl, window.location.protocol + '//' + window.location.host).href
+    if (newUrl !== window.location.href) { //has it changed?
+      var now = window.performance.now();
+      if (this._lastChangedAt + this.dwellTime > now) {
+        window.history.replaceState({}, '', newUrl);
+      } else {
+        window.history.pushState({}, '', newUrl);
       }
-      this.urlUpdateInProgress = false;
+      this._urlChanged();
     }
   }
   _encodeParams(params) {
